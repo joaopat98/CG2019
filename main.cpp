@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include <GL/freeglut.h>
+#include <GL/glut.h>
 
 //--------------------------------- Definir cores
 #define BLUE 0.0, 0.0, 1.0, 1.0
@@ -36,14 +36,14 @@ vec3 operator-(vec3 v1, vec3 v2)
 	return {v1.x - v2.x, v1.y - v2.y, v1.z - v2.z};
 }
 
-vec3 &operator+=(vec3 &lhs, const vec3 &rhs)
+void operator+=(vec3 &lhs, const vec3 &rhs)
 {
 	lhs.x += rhs.x;
 	lhs.y += rhs.y;
 	lhs.z += rhs.z;
 }
 
-vec3 &operator-=(vec3 &lhs, const vec3 &rhs)
+void operator-=(vec3 &lhs, const vec3 &rhs)
 {
 	lhs.x -= rhs.x;
 	lhs.y -= rhs.y;
@@ -109,6 +109,8 @@ void inicializa(void)
 void glColorHSV(GLfloat h, GLfloat s, GLfloat v)
 {
 	GLfloat c = v * s;
+	while (h < 0)
+		h += 360;
 	GLfloat x = c * (1 - fabs(fmod((h / 60), 2) - 1));
 	GLfloat m = v - c;
 	GLfloat r, g, b;
@@ -187,7 +189,7 @@ void drawScene()
 	int step_begin = (int)floor(pos_state);
 	glPushMatrix();
 	{
-		for (int i = 0; i * frac < 360; i++)
+		for (int i = step_begin - step_under; (i - (step_begin - step_under)) * frac < 360; i++)
 		{
 			glBegin(GL_POLYGON);
 			glColorHSV(i * frac + t * color_time_mult, 1, 1);
@@ -309,13 +311,6 @@ void display(void)
 	dir += pos;
 
 	gluLookAt(pos.x, pos.y, pos.z, dir.x, dir.y, dir.z, 0, 1, 0);
-
-	glPushMatrix();
-	{
-		glTranslatef(dir.x, dir.y, dir.z);
-		glutWireTeapot(1);
-	}
-	glPopMatrix();
 
 	//…………………………………………………………………………………………………………………………………………………………Objectos/modelos
 	drawEixos();
@@ -529,7 +524,6 @@ void update()
 int main(int argc, char **argv)
 {
 	glutInit(&argc, argv);
-	glutSetOption(GLUT_MULTISAMPLE, 8);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
 	glutInitWindowSize(wScreen, hScreen);
 	glutInitWindowPosition(300, 100);
