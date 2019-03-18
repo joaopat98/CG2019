@@ -10,6 +10,7 @@
             "args": [
                 "-g",
                 "main.cpp",
+                "angel.cpp",
                 "-lGL",
                 "-lGLU",
                 "-lglut",

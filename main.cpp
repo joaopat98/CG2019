@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <GL/glut.h>
+#include "angel.hpp"
 
 //--------------------------------- Definir cores
 #define BLUE 0.0, 0.0, 1.0, 1.0
@@ -72,15 +73,15 @@ vec3 lerp3(vec3 v1, vec3 v2, GLfloat c)
 
 //------------------------------------------------------------ Sistema Coordenadas + objectos
 int mousex = 0, mousey = 0;
-GLfloat pos_state = 0, pos_state_incr = 5;
+GLfloat pos_state = 0, pos_state_incr = 3;
 int steps = 1000;
 int step_under = 50, step_over = 50;
-GLfloat min_rad = 2, radius = 10, frac = 10, height = 0.6;
+GLfloat min_rad = 2, radius = 20, frac = 20, height = 2;
 GLfloat border_size = 0.1;
-GLfloat y_offset = 4;
+GLfloat y_offset = -10;
 bool free_cam = false;
 bool forward, backward, left, right, up, down;
-GLfloat speed = 5;
+GLfloat speed = 20;
 GLfloat incr = 0.1;
 vec3 pos = {-10, 10, 0};
 vec2 rot = {90, 0};
@@ -88,11 +89,38 @@ GLint wScreen = 800,
 	  hScreen = 600;					  //.. janela (pixeis)
 GLfloat xC = 10.0, yC = 10.0, zC = 100.0; //.. Mundo  (unidades mundo)
 GLfloat color_time_mult = 50;
+const int num_angels = 1000;
+GLfloat angel_delta = 0.1;
+Angel angels[num_angels];
+int angel_pos = 0;
 
 //------------------------------------------------------------ Observador
 GLfloat angZoom = 90;
 GLfloat incZoom = 3;
 GLfloat offset = 0;
+
+GLfloat angelSpeed()
+{
+	return 5 + frand() * 10;
+}
+
+void backAngel(int pos)
+{
+	for (int i = num_angels - 1; i > 0; i--)
+	{
+		angels[i] = angels[i - 1];
+	}
+	angels[0] = Angel((pos - num_angels / (GLfloat)2) * angel_delta, angel_delta, 20, 40, angelSpeed(), 2);
+}
+
+void frontAngel(int pos)
+{
+	for (int i = 0; i < num_angels - 1; i++)
+	{
+		angels[i] = angels[i + 1];
+	}
+	angels[num_angels - 1] = Angel((pos + num_angels / (GLfloat)2) * angel_delta, angel_delta, 20, 40, angelSpeed(), 2);
+}
 
 //================================================================================
 //=========================================================================== INIT
@@ -104,6 +132,10 @@ void inicializa(void)
 	pos.x = cos(pos_state * frac * DEGMULT) * radius / 2;
 	pos.z = sin(pos_state * frac * DEGMULT) * radius / 2;
 	pos.y = pos_state * height + y_offset;
+	for (int i = 0; i < num_angels; i++)
+	{
+		angels[i] = Angel((i - num_angels / (GLfloat)2) * angel_delta, angel_delta, 20, 40, angelSpeed(), 2);
+	}
 }
 
 void glColorHSV(GLfloat h, GLfloat s, GLfloat v)
@@ -176,7 +208,7 @@ void drawEixos()
 	glEnd();
 }
 
-void drawScene()
+void drawStairs()
 {
 	glColor3f(1, 1, 1);
 	GLfloat x2 = cos(frac * DEGMULT) * radius;
@@ -189,6 +221,7 @@ void drawScene()
 	int step_begin = (int)floor(pos_state);
 	glPushMatrix();
 	{
+		glRotatef(frac * step_begin - step_under, 0, 1, 0);
 		for (int i = step_begin - step_under; (i - (step_begin - step_under)) * frac < 360; i++)
 		{
 			glBegin(GL_POLYGON);
@@ -204,10 +237,9 @@ void drawScene()
 		}
 	}
 	glPopMatrix();
-	glRotatef(frac * step_begin - step_under, 0, 1, 0);
-	printf("%f\n", t);
 	glPushMatrix();
 	{
+		glRotatef(frac * step_begin - step_under, 0, 1, 0);
 		for (int i = step_begin - step_under; i < step_begin + step_over; i++)
 		{
 			glColorHSV((i - 1) * frac + t * color_time_mult + 180, 1, 1);
@@ -286,6 +318,20 @@ void drawScene()
 		}
 	}
 	glPopMatrix();
+}
+
+void drawAngels()
+{
+	for (int i = 0; i < num_angels; i++)
+	{
+		angels[i].render();
+	}
+}
+
+void drawScene()
+{
+	drawStairs();
+	drawAngels();
 }
 
 void display(void)
@@ -437,6 +483,11 @@ void mouse(int x, int y)
 		rot.y = -85;
 }
 
+GLfloat headBob(GLfloat state)
+{
+	return pow(cos(PI * state), 4) / 2 + state;
+}
+
 void update()
 {
 	GLfloat deltaT;
@@ -460,9 +511,9 @@ void update()
 		else
 		{
 			pos_state += deltaT * pos_state_incr;
-			pos.x = cos(pos_state * frac * DEGMULT) * radius / 2;
-			pos.z = -sin(pos_state * frac * DEGMULT) * radius / 2;
-			pos.y = pos_state * height + y_offset;
+			pos.x = cos(pos_state * frac * DEGMULT) * radius * 0.6;
+			pos.z = -sin(pos_state * frac * DEGMULT) * radius * 0.6;
+			pos.y = headBob(pos_state) * height + y_offset;
 		}
 	}
 	if (backward)
@@ -478,9 +529,9 @@ void update()
 		else
 		{
 			pos_state -= deltaT * pos_state_incr;
-			pos.x = cos(pos_state * frac * DEGMULT) * radius / 2;
-			pos.z = -sin(pos_state * frac * DEGMULT) * radius / 2;
-			pos.y = pos_state * height + y_offset;
+			pos.x = cos(pos_state * frac * DEGMULT) * radius * 0.6;
+			pos.z = -sin(pos_state * frac * DEGMULT) * radius * 0.6;
+			pos.y = headBob(pos_state) * height + y_offset;
 		}
 	}
 	if (free_cam && left)
@@ -517,6 +568,19 @@ void update()
 	{
 		pos_state = (pos.y - y_offset) / height;
 	}
+
+	int new_angel_pos = (int)floor(pos_state * height / angel_delta);
+	if (new_angel_pos > angel_pos)
+		frontAngel(new_angel_pos);
+	if (new_angel_pos < angel_pos)
+		backAngel(new_angel_pos);
+	angel_pos = new_angel_pos;
+
+	for (int i = 0; i < num_angels; i++)
+	{
+		angels[i].update(deltaT);
+	}
+
 	glutWarpPointer(wScreen / 2, hScreen / 2);
 	glutPostRedisplay();
 }
