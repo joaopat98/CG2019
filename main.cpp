@@ -12,7 +12,6 @@
 #define WHITE 1.0, 1.0, 1.0, 1.0
 #define BLACK 0.0, 0.0, 0.0, 1.0
 #define PI 3.14159
-#define DEGMULT (PI / 180)
 
 //================================================================================
 //===========================================================Variaveis e constantes
@@ -81,70 +80,102 @@ vec3 lerp3(vec3 v1, vec3 v2, GLfloat c)
 	return {};
 }
 
-//------------------------------------------------------------ Sistema Coordenadas + objectos
+/* #region  Program Params */
+
+/* #region  	Mouse */
 int mousex = 0, mousey = 0;
+GLfloat mouse_incr = 0.1;
+/* #endregion */
+
+/* #region  	Stair Params */
 int step_under = 25, step_over = 25;
 GLfloat min_rad = 5, radius = 30, frac = 20, height = 2;
-GLfloat pos_state_x = (radius + min_rad) / 2 / radius, pos_state_y = 0, pos_state_incr = 0.5;
+GLfloat color_time_mult = 50;
+/* #region  		Stair Railing */
 GLfloat border_size = 1;
 GLfloat border_height = 8;
-GLfloat y_offset = 0;
+/* #endregion */
+/* #endregion */
+
+/* #region  	Stair State */
+GLfloat pos_state_x = (radius + min_rad) / 2 / radius, pos_state_y = 0, pos_state_incr = 0.5;
+/* #endregion */
+
+/* #region  	Free Movement */
 bool free_cam = false;
 bool forward, backward, left, right, up, down;
 GLfloat speed = 20;
-GLfloat incr = 0.1;
+/* #endregion */
+
+/* #region  	Jumping */
+GLfloat jumpVel = 40;
+GLfloat curVel = 0;
+GLfloat grav = -100;
+bool jumping;
+/* #endregion */
+
+/* #region  	Observer */
 vec3 pos = {-10, 10, 0};
 vec2 rot = {90, 0};
-GLint wScreen = 800,
-	  hScreen = 600;					  //.. janela (pixeis)
+GLfloat y_offset = 0;
+/* #endregion */
+
+/* #region  	View Settings */
+GLint wScreen = 800, hScreen = 600;		  //.. janela (pixeis)
 GLfloat xC = 10.0, yC = 10.0, zC = 100.0; //.. Mundo  (unidades mundo)
-GLfloat color_time_mult = 50;
+GLfloat angZoom = 90;
+/* #endregion */
+
+/* #region  	Angels */
 const int num_angels = 1000;
-GLfloat angel_delta = 0.1;
+GLfloat angel_delta = 0.2;
 Angel angels[num_angels];
 int angel_pos = 0;
+GLfloat angelSize = 4;
+GLfloat minAngelRad = 30, maxAngelRad = 50;
+/* #endregion */
 
-//------------------------------------------------------------ Observador
-GLfloat angZoom = 90;
-GLfloat incZoom = 3;
-GLfloat offset = 0;
+/* #endregion */
 
 GLfloat angelSpeed()
 {
 	return 5 + frand() * 10;
 }
 
-void backAngel(int pos)
+void backAngel()
 {
 	for (int i = num_angels - 1; i > 0; i--)
 	{
 		angels[i] = angels[i - 1];
 	}
-	angels[0] = Angel((pos - num_angels / (GLfloat)2) * angel_delta, angel_delta, 20, 40, angelSpeed(), 2);
+	angels[0] = Angel(((angels[1].index - 1) - num_angels / (GLfloat)2) * angel_delta, angel_delta, minAngelRad, maxAngelRad, angelSpeed(), angelSize, angels[1].index - 1);
+	angel_pos--;
 }
 
-void frontAngel(int pos)
+void frontAngel()
 {
 	for (int i = 0; i < num_angels - 1; i++)
 	{
 		angels[i] = angels[i + 1];
 	}
-	angels[num_angels - 1] = Angel((pos + num_angels / (GLfloat)2) * angel_delta, angel_delta, 20, 40, angelSpeed(), 2);
+	angels[num_angels - 1] = Angel(((angels[num_angels - 2].index + 1) - num_angels / (GLfloat)2) * angel_delta, angel_delta, minAngelRad, maxAngelRad, angelSpeed(), angelSize, angels[num_angels - 2].index + 1);
+	angel_pos++;
 }
 
 //================================================================================
 //=========================================================================== INIT
 void inicializa(void)
 {
-	glClearColor(BLACK);	 //………………………………………………………………………………Apagar
-	glEnable(GL_DEPTH_TEST); //………………………………………………………………………………Profundidade
-	glShadeModel(GL_SMOOTH); //………………………………………………………………………………Interpolacao de cores
+	glClearColor(BLACK);
+	glEnable(GL_DEPTH_TEST);
+	glShadeModel(GL_SMOOTH);
 	pos.x = cos(pos_state_y * frac * DEGMULT) * pos_state_x * radius;
 	pos.z = sin(pos_state_y * frac * DEGMULT) * pos_state_x * radius;
 	pos.y = pos_state_y * height + y_offset;
+	angel_pos = pos.y / angel_delta;
 	for (int i = 0; i < num_angels; i++)
 	{
-		angels[i] = Angel((i - num_angels / (GLfloat)2) * angel_delta, angel_delta, 20, 40, angelSpeed(), 2);
+		angels[i] = Angel((i - num_angels / (GLfloat)2) * angel_delta, angel_delta, minAngelRad, maxAngelRad, angelSpeed(), angelSize, i);
 	}
 }
 
@@ -438,7 +469,7 @@ void display(void)
 
 	gluLookAt(pos.x, pos.y, pos.z, dir.x, dir.y, dir.z, 0, 1, 0);
 
-	//…………………………………………………………………………………………………………………………………………………………Objectos/modelos
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Objectos/modelos
 	drawEixos();
 	drawScene();
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Actualizacao
@@ -482,10 +513,15 @@ void keyboard(unsigned char key, int x, int y)
 		break;
 	case 'f':
 	case 'F':
+		jumping = false;
 		free_cam = !free_cam;
-		pos.x = cos(pos_state_y * frac * DEGMULT) * pos_state_x * radius;
-		pos.z = -sin(pos_state_y * frac * DEGMULT) * pos_state_x * radius;
-		pos.y = headBob(pos_state_y) * height + y_offset;
+		break;
+	case ' ':
+		if (!jumping)
+		{
+			jumping = true;
+			curVel = jumpVel;
+		}
 		break;
 	//--------------------------- Escape
 	case 27:
@@ -560,8 +596,8 @@ void reshape(GLsizei width, GLsizei height)
 
 void mouse(int x, int y)
 {
-	rot.x += (wScreen / 2 - x) * incr;
-	rot.y += (hScreen / 2 - y) * incr;
+	rot.x += (wScreen / 2 - x) * mouse_incr;
+	rot.y += (hScreen / 2 - y) * mouse_incr;
 	if (rot.y > 85)
 		rot.y = 85;
 	if (rot.y < -85)
@@ -698,18 +734,28 @@ void update()
 		pos_state_y += moveAngle / frac;
 		pos_state_x = magn;
 
-		printf("%f\n", moveAngle);
-
 		pos.x = cos(pos_state_y * frac * DEGMULT) * pos_state_x * radius;
 		pos.z = -sin(pos_state_y * frac * DEGMULT) * pos_state_x * radius;
-		pos.y = headBob(pos_state_y) * height + y_offset;
+		if (jumping)
+		{
+			curVel += grav * deltaT;
+			pos.y += curVel * deltaT;
+			GLfloat stdY = headBob(pos_state_y) * height + y_offset;
+			if (pos.y <= stdY)
+			{
+				jumping = false;
+				pos.y = stdY;
+			}
+		}
+		else
+			pos.y = headBob(pos_state_y) * height + y_offset;
 	}
 
-	int new_angel_pos = (int)floor(pos_state_y * height / angel_delta);
-	if (new_angel_pos > angel_pos)
-		frontAngel(new_angel_pos);
-	if (new_angel_pos < angel_pos)
-		backAngel(new_angel_pos);
+	int new_angel_pos = (int)floor(pos.y / angel_delta);
+	while (new_angel_pos > angel_pos)
+		frontAngel();
+	while (new_angel_pos < angel_pos)
+		backAngel();
 	angel_pos = new_angel_pos;
 
 	for (int i = 0; i < num_angels; i++)

@@ -6,24 +6,24 @@
 #define ANGEL_H
 
 #define PI 3.14159
-#define DEGMULT PI / 180
+#define DEGMULT (PI / 180)
 
 float frand();
 
 class Angel
 {
-  private:
-    GLfloat angle;
-    GLfloat radius;
-    GLfloat height;
-    GLfloat speed;
-    GLfloat size;
+public:
+  GLfloat angle;
+  GLfloat radius;
+  GLfloat height;
+  GLfloat speed;
+  GLfloat size;
+  int index;
 
-  public:
-    Angel();
-    Angel(GLfloat base_height, GLfloat delta_height, GLfloat base_rad, GLfloat delta_rad, GLfloat speed, GLfloat size);
-    void render();
-    void update(GLfloat deltaT);
+  Angel();
+  Angel(GLfloat base_height, GLfloat delta_height, GLfloat base_rad, GLfloat delta_rad, GLfloat speed, GLfloat size, int index);
+  void render();
+  void update(GLfloat deltaT);
 };
 
 #endif
