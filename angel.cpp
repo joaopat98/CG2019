@@ -9,13 +9,14 @@ Angel::Angel()
 {
 }
 
-Angel::Angel(GLfloat base_height, GLfloat delta_height, GLfloat base_rad, GLfloat delta_rad, GLfloat speed, GLfloat size)
+Angel::Angel(GLfloat base_height, GLfloat delta_height, GLfloat base_rad, GLfloat delta_rad, GLfloat speed, GLfloat size, int index)
 {
     angle = frand() * 360;
     height = base_height + delta_height * frand();
     radius = base_rad + delta_rad * frand();
     this->speed = speed;
     this->size = size;
+    this->index = index;
 }
 
 void Angel::render()
