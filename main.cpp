@@ -13,9 +13,6 @@
 #define BLACK 0.0, 0.0, 0.0, 1.0
 #define PI 3.14159
 
-//================================================================================
-//===========================================================Variaveis e constantes
-
 struct vec3
 {
 	GLfloat x, y, z;
@@ -90,7 +87,7 @@ GLfloat mouse_incr = 0.1;
 /* #region  	Stair Params */
 int step_under = 25, step_over = 25;
 GLfloat min_rad = 5, radius = 30, frac = 20, height = 2;
-GLfloat color_time_mult = 50;
+GLfloat color_time_mult = 100;
 /* #region  		Stair Railing */
 GLfloat border_size = 1;
 GLfloat border_height = 8;
@@ -162,9 +159,7 @@ void frontAngel()
 	angel_pos++;
 }
 
-//================================================================================
-//=========================================================================== INIT
-void inicializa(void)
+void init(void)
 {
 	glClearColor(BLACK);
 	glEnable(GL_DEPTH_TEST);
@@ -242,21 +237,21 @@ GLfloat flerp(GLfloat v1, GLfloat v2, GLfloat t)
 	return v1 + (v2 - v1) * t;
 }
 
-void drawEixos()
+void drawAxes()
 {
-	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Eixo X
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ X axis
 	glColor4f(RED);
 	glBegin(GL_LINES);
 	glVertex3i(0, 0, 0);
 	glVertex3i(10, 0, 0);
 	glEnd();
-	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Eixo Y
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Y axis
 	glColor4f(GREEN);
 	glBegin(GL_LINES);
 	glVertex3i(0, 0, 0);
 	glVertex3i(0, 10, 0);
 	glEnd();
-	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Eixo Z
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Z axis
 	glColor4f(BLUE);
 	glBegin(GL_LINES);
 	glVertex3i(0, 0, 0);
@@ -276,6 +271,9 @@ void drawStairs()
 	GLfloat border_z = -sin(frac * DEGMULT) * (radius - border_size);
 
 	int step_begin = (int)floor(pos_state_y);
+
+	// center pillar
+
 	glPushMatrix();
 	{
 		glRotatef(frac * step_begin - step_under, 0, 1, 0);
@@ -294,28 +292,33 @@ void drawStairs()
 		}
 	}
 	glPopMatrix();
+
+	//steps
+
 	glPushMatrix();
 	{
 		glRotatef(frac * step_begin - step_under, 0, 1, 0);
+		glTranslatef(0, (step_begin - step_under) * height, 0);
+
 		for (int i = step_begin - step_under; i < step_begin + step_over; i++)
 		{
 			//front
 			glColorHSV((i - 1) * frac + t * color_time_mult + 120, 1, 1);
 			glBegin(GL_POLYGON);
-			glVertex3f(min_rad, i * height, 0);
-			glVertex3f(radius, i * height, 0);
-			glVertex3f(radius, (i + 1) * height, 0);
-			glVertex3f(min_rad, (i + 1) * height, 0);
+			glVertex3f(min_rad, 0, 0);
+			glVertex3f(radius, 0, 0);
+			glVertex3f(radius, height, 0);
+			glVertex3f(min_rad, height, 0);
 			glEnd();
 
 			//top
 			glBegin(GL_POLYGON);
 			glColorHSV((i - 1) * frac + t * color_time_mult, 1, 1);
-			glVertex3f(min_rad, (i + 1) * height, 0);
-			glVertex3f(radius, (i + 1) * height, 0);
+			glVertex3f(min_rad, height, 0);
+			glVertex3f(radius, height, 0);
 			glColorHSV(i * frac + t * color_time_mult, 1, 1);
-			glVertex3f(x2, (i + 1) * height, z2);
-			glVertex3f(x3, (i + 1) * height, z3);
+			glVertex3f(x2, height, z2);
+			glVertex3f(x3, height, z3);
 			glEnd();
 
 			//back
@@ -324,10 +327,10 @@ void drawStairs()
 				glRotatef(frac, 0, 1, 0);
 				glColorHSV(i * frac + t * color_time_mult + 120, 1, 1);
 				glBegin(GL_POLYGON);
-				glVertex3f(min_rad, i * height, 0);
-				glVertex3f(radius, i * height, 0);
-				glVertex3f(radius, (i + 1) * height, 0);
-				glVertex3f(min_rad, (i + 1) * height, 0);
+				glVertex3f(min_rad, 0, 0);
+				glVertex3f(radius, 0, 0);
+				glVertex3f(radius, height, 0);
+				glVertex3f(min_rad, height, 0);
 				glEnd();
 			}
 			glPopMatrix();
@@ -335,11 +338,11 @@ void drawStairs()
 			//bottom
 			glBegin(GL_POLYGON);
 			glColorHSV((i - 1) * frac + t * color_time_mult, 1, 1);
-			glVertex3f(min_rad, i * height, 0);
-			glVertex3f(radius, i * height, 0);
-			glColorHSV(i * frac + +t * color_time_mult, 1, 1);
-			glVertex3f(x2, i * height, z2);
-			glVertex3f(x3, i * height, z3);
+			glVertex3f(min_rad, 0, 0);
+			glVertex3f(radius, 0, 0);
+			glColorHSV(i * frac + t * color_time_mult, 1, 1);
+			glVertex3f(x2, 0, z2);
+			glVertex3f(x3, 0, z3);
 			glEnd();
 
 			//railing
@@ -347,85 +350,86 @@ void drawStairs()
 			glColorHSV((i - 1) * frac + t * color_time_mult + 120, 1, 1);
 
 			glBegin(GL_POLYGON);
-			glVertex3f(radius - border_size, (i + 1) * height, 0);
-			glVertex3f(radius, (i + 1) * height, 0);
-			glVertex3f(radius, (i + 1) * height + border_height, 0);
-			glVertex3f(radius - border_size, (i + 1) * height + border_height, 0);
+			glVertex3f(radius - border_size, height, 0);
+			glVertex3f(radius, height, 0);
+			glVertex3f(radius, height + border_height, 0);
+			glVertex3f(radius - border_size, height + border_height, 0);
 			glEnd();
 
 			glBegin(GL_POLYGON);
-			glVertex3f(flerp(radius - border_size, border_x, border_frac), (i + 1) * height, flerp(0, border_z, border_frac));
-			glVertex3f(flerp(radius, x2, border_frac), (i + 1) * height, flerp(0, z2, border_frac));
-			glVertex3f(flerp(radius, x2, border_frac), (i + 1) * height + border_height - border_size, flerp(0, z2, border_frac));
-			glVertex3f(flerp(radius - border_size, border_x, border_frac), (i + 1) * height + border_height - border_size, flerp(0, border_z, border_frac));
+			glVertex3f(flerp(radius - border_size, border_x, border_frac), height, flerp(0, border_z, border_frac));
+			glVertex3f(flerp(radius, x2, border_frac), height, flerp(0, z2, border_frac));
+			glVertex3f(flerp(radius, x2, border_frac), height + border_height - border_size, flerp(0, z2, border_frac));
+			glVertex3f(flerp(radius - border_size, border_x, border_frac), height + border_height - border_size, flerp(0, border_z, border_frac));
 			glEnd();
 
 			glBegin(GL_POLYGON);
 			glColorHSV((i - 1) * frac + t * color_time_mult + 240, 1, 1);
-			glVertex3f(radius, (i + 1) * height + border_height, 0);
-			glVertex3f(radius, (i + 1) * height + border_height - border_size, 0);
+			glVertex3f(radius, height + border_height, 0);
+			glVertex3f(radius, height + border_height - border_size, 0);
 			glColorHSV(i * frac + t * color_time_mult + 240, 1, 1);
-			glVertex3f(x2, (i + 1) * height + border_height - border_size, z2);
-			glVertex3f(x2, (i + 1) * height + border_height, z2);
+			glVertex3f(x2, height + border_height - border_size, z2);
+			glVertex3f(x2, height + border_height, z2);
 			glEnd();
 
 			glBegin(GL_POLYGON);
 			glColorHSV((i - 1) * frac + t * color_time_mult + 240, 1, 1);
-			glVertex3f(radius, (i + 1) * height + border_height - border_size, 0);
-			glVertex3f(radius, (i + 1) * height, 0);
+			glVertex3f(radius, height + border_height - border_size, 0);
+			glVertex3f(radius, height, 0);
 			glColorHSV((i - 1 + border_frac) * frac + t * color_time_mult + 240, 1, 1);
-			glVertex3f(flerp(radius, x2, border_frac), (i + 1) * height, flerp(0, z2, border_frac));
-			glVertex3f(flerp(radius, x2, border_frac), (i + 1) * height + border_height - border_size, flerp(0, z2, border_frac));
+			glVertex3f(flerp(radius, x2, border_frac), height, flerp(0, z2, border_frac));
+			glVertex3f(flerp(radius, x2, border_frac), height + border_height - border_size, flerp(0, z2, border_frac));
 			glEnd();
 
 			glBegin(GL_POLYGON);
 			glColorHSV((i - 1) * frac + t * color_time_mult + 240, 1, 1);
-			glVertex3f(radius - border_size, (i + 1) * height + border_height, 0);
-			glVertex3f(radius - border_size, (i + 1) * height + border_height - border_size, 0);
+			glVertex3f(radius - border_size, height + border_height, 0);
+			glVertex3f(radius - border_size, height + border_height - border_size, 0);
 			glColorHSV(i * frac + t * color_time_mult + 240, 1, 1);
-			glVertex3f(border_x, (i + 1) * height + border_height - border_size, border_z);
-			glVertex3f(border_x, (i + 1) * height + border_height, border_z);
+			glVertex3f(border_x, height + border_height - border_size, border_z);
+			glVertex3f(border_x, height + border_height, border_z);
 			glEnd();
 
 			glBegin(GL_POLYGON);
 			glColorHSV((i - 1) * frac + t * color_time_mult + 240, 1, 1);
-			glVertex3f(radius - border_size, (i + 1) * height, 0);
-			glVertex3f(radius - border_size, (i + 1) * height + border_height - border_size, 0);
+			glVertex3f(radius - border_size, height, 0);
+			glVertex3f(radius - border_size, height + border_height - border_size, 0);
 			glColorHSV((i - 1 + border_frac) * frac + t * color_time_mult + 240, 1, 1);
-			glVertex3f(flerp(radius - border_size, border_x, border_frac), (i + 1) * height + border_height - border_size, flerp(0, border_z, border_frac));
-			glVertex3f(flerp(radius - border_size, border_x, border_frac), (i + 1) * height, flerp(0, border_z, border_frac));
+			glVertex3f(flerp(radius - border_size, border_x, border_frac), height + border_height - border_size, flerp(0, border_z, border_frac));
+			glVertex3f(flerp(radius - border_size, border_x, border_frac), height, flerp(0, border_z, border_frac));
 			glEnd();
 
 			glBegin(GL_POLYGON);
 			glColorHSV((i - 1 + border_frac) * frac + t * color_time_mult, 1, 1);
-			glVertex3f(flerp(radius - border_size, border_x, border_frac), (i + 1) * height + border_height - border_size, flerp(0, border_z, border_frac));
-			glVertex3f(flerp(radius, x2, border_frac), (i + 1) * height + border_height - border_size, flerp(0, z2, border_frac));
+			glVertex3f(flerp(radius - border_size, border_x, border_frac), height + border_height - border_size, flerp(0, border_z, border_frac));
+			glVertex3f(flerp(radius, x2, border_frac), height + border_height - border_size, flerp(0, z2, border_frac));
 			glColorHSV(i * frac + t * color_time_mult, 1, 1);
-			glVertex3f(x2, (i + 1) * height + border_height - border_size, z2);
-			glVertex3f(border_x, (i + 1) * height + border_height - border_size, border_z);
+			glVertex3f(x2, height + border_height - border_size, z2);
+			glVertex3f(border_x, height + border_height - border_size, border_z);
 			glEnd();
 
 			glBegin(GL_POLYGON);
 			glColorHSV((i - 1) * frac + t * color_time_mult, 1, 1);
-			glVertex3f(radius - border_size, (i + 1) * height + border_height, 0);
-			glVertex3f(radius, (i + 1) * height + border_height, 0);
+			glVertex3f(radius - border_size, height + border_height, 0);
+			glVertex3f(radius, height + border_height, 0);
 			glColorHSV(i * frac + t * color_time_mult, 1, 1);
-			glVertex3f(x2, (i + 1) * height + border_height, z2);
-			glVertex3f(border_x, (i + 1) * height + border_height, border_z);
+			glVertex3f(x2, height + border_height, z2);
+			glVertex3f(border_x, height + border_height, border_z);
 			glEnd();
 
 			//right
 
 			glBegin(GL_POLYGON);
 			glColorHSV((i - 1) * frac + t * color_time_mult + 240, 1, 1);
-			glVertex3f(radius, i * height, 0);
-			glVertex3f(radius, (i + 1) * height, 0);
+			glVertex3f(radius, 0, 0);
+			glVertex3f(radius, height, 0);
 			glColorHSV(i * frac + t * color_time_mult + 240, 1, 1);
-			glVertex3f(x2, (i + 1) * height, z2);
-			glVertex3f(x2, i * height, z2);
+			glVertex3f(x2, height, z2);
+			glVertex3f(x2, 0, z2);
 			glEnd();
 
 			glRotatef(frac, 0, 1, 0);
+			glTranslatef(0, height, 0);
 		}
 	}
 	glPopMatrix();
@@ -448,19 +452,19 @@ void drawScene()
 void display(void)
 {
 
-	//================================================================= APaga ecran/profundidade
+	// set view
+
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	//================================================================= NAO MOFIFICAR
-	glViewport(0, 0, wScreen, hScreen);								// ESQUECER PoR AGORA
-	glMatrixMode(GL_PROJECTION);									// ESQUECER PoR AGORA
-	glLoadIdentity();												// ESQUECER PoR AGORA
-	gluPerspective(angZoom, (float)wScreen / hScreen, 0.1, 3 * zC); // ESQUECER PoR AGORA
-	glMatrixMode(GL_MODELVIEW);										// ESQUECER PoR AGORA
-	glLoadIdentity();												// ESQUECER PoR AGORA
-																	//================================================================= NAO MOFIFICAR
+	glViewport(0, 0, wScreen, hScreen);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(angZoom, (float)wScreen / hScreen, 0.1, 3 * zC);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
 
-	//-------------------------------------------------------------- observador
+	// update observer
+
 	vec3 dir;
 	dir.x = 5 * sin(rot.x * DEGMULT) * cos(rot.y * DEGMULT);
 	dir.z = 5 * cos(rot.x * DEGMULT) * cos(rot.y * DEGMULT);
@@ -469,10 +473,11 @@ void display(void)
 
 	gluLookAt(pos.x, pos.y, pos.z, dir.x, dir.y, dir.z, 0, 1, 0);
 
-	//����������������������������������������������������������Objectos/modelos
-	drawEixos();
+	// draw
+
+	drawAxes();
 	drawScene();
-	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Actualizacao
+
 	glutSwapBuffers();
 }
 
@@ -481,7 +486,6 @@ GLfloat headBob(GLfloat state)
 	return pow(cos(PI * state), 4) / 2 + state;
 }
 
-//======================================================= EVENTOS
 void keyboard(unsigned char key, int x, int y)
 {
 
@@ -559,7 +563,7 @@ void keyRelease(unsigned char key, int x, int y)
 	case 'E':
 		down = false;
 		break;
-		//--------------------------- Escape
+		// Escape
 	case 27:
 		exit(0);
 		break;
@@ -572,27 +576,22 @@ void teclasNotAscii(int key, int x, int y)
 	glutPostRedisplay();
 }
 
-void reshape(GLsizei width, GLsizei height)
-{ // GLsizei for non-negative integer
-	// Compute aspect ratio of the new window
+//resize window
+void resize(GLsizei width, GLsizei height)
+{
 	if (height == 0)
-		height = 1; // To prevent divide by 0
+		height = 1;
 	GLfloat aspect = (GLfloat)width / (GLfloat)height;
 
-	// Set the viewport to cover the new window
 	glViewport(0, 0, width, height);
 	hScreen = height;
 	wScreen = width;
-	// Set the aspect ratio of the clipping volume to match the viewport
-	glMatrixMode(GL_PROJECTION); // To operate on the Projection matrix
-	glLoadIdentity();			 // Reset
-	// Enable perspective projection with fovy, aspect, zNear and zFar
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+
 	gluPerspective(45.0f, aspect, 0.1f, 100.0f);
 	glutPostRedisplay();
 }
-
-//======================================================= MAIN
-//======================================================= MAIN
 
 void mouse(int x, int y)
 {
@@ -615,6 +614,9 @@ void update()
 	t = curTime;
 
 	vec3 dir{0, 0, 0};
+
+	// update direction vector
+
 	if (forward)
 	{
 		if (free_cam)
@@ -628,10 +630,6 @@ void update()
 		{
 			dir.x += sin(rot.x * DEGMULT);
 			dir.z += cos(rot.x * DEGMULT);
-			/* pos_state += deltaT * pos_state_incr;
-			pos.x = cos(pos_state * frac * DEGMULT) * radius * 0.6;
-			pos.z = -sin(pos_state * frac * DEGMULT) * radius * 0.6;
-			pos.y = headBob(pos_state) * height + y_offset; */
 		}
 	}
 	if (backward)
@@ -649,10 +647,6 @@ void update()
 
 			dir.x -= sin(rot.x * DEGMULT);
 			dir.z -= cos(rot.x * DEGMULT);
-			/* pos_state -= deltaT * pos_state_incr;
-			pos.x = cos(pos_state * frac * DEGMULT) * radius * 0.6;
-			pos.z = -sin(pos_state * frac * DEGMULT) * radius * 0.6;
-			pos.y = headBob(pos_state) * height + y_offset; */
 		}
 	}
 	if (left)
@@ -701,10 +695,15 @@ void update()
 	}
 	if (free_cam)
 	{
+		//free camera mode
 		pos_state_y = (pos.y - y_offset) / height;
 	}
 	else
 	{
+		// stair mode
+
+		//get rotation relative to current stair step
+
 		GLfloat ang = pos_state_y * frac;
 		dir = dir / dist2(0, 0, dir.x, dir.z);
 		vec3 rotdir{
@@ -713,9 +712,14 @@ void update()
 			-dir.z * cos(ang * DEGMULT) - dir.x * sin(ang * DEGMULT),
 		};
 
+		// calc next position in stairs
+
 		vec3 newPos = {pos_state_x, 0, 0};
 		newPos += rotdir * pos_state_incr * deltaT;
 		GLfloat magn = dist2(0, 0, newPos.x, newPos.z);
+
+		// stair bounds
+
 		if (magn < min_rad / radius + 0.01)
 		{
 			newPos = newPos / dist2(0, 0, newPos.x, newPos.z) * ((min_rad / radius) + 0.01);
@@ -727,6 +731,8 @@ void update()
 			magn = 1 - (border_size / radius) - 0.01;
 		}
 
+		//calc stair state
+
 		GLfloat moveAngle = 0;
 
 		if (newPos.z != 0)
@@ -734,8 +740,13 @@ void update()
 		pos_state_y += moveAngle / frac;
 		pos_state_x = magn;
 
+		//update position
+
 		pos.x = cos(pos_state_y * frac * DEGMULT) * pos_state_x * radius;
 		pos.z = -sin(pos_state_y * frac * DEGMULT) * pos_state_x * radius;
+
+		//update jumping params
+
 		if (jumping)
 		{
 			curVel += grav * deltaT;
@@ -751,6 +762,8 @@ void update()
 			pos.y = headBob(pos_state_y) * height + y_offset;
 	}
 
+	// update rendered angels
+
 	int new_angel_pos = (int)floor(pos.y / angel_delta);
 	while (new_angel_pos > angel_pos)
 		frontAngel();
@@ -762,6 +775,8 @@ void update()
 	{
 		angels[i].update(deltaT);
 	}
+
+	// reset pointer to center of screen
 
 	glutWarpPointer(wScreen / 2, hScreen / 2);
 	glutPostRedisplay();
@@ -775,13 +790,13 @@ int main(int argc, char **argv)
 	glutInitWindowPosition(300, 100);
 	glutCreateWindow("{jh,pjmm}@dei.uc.pt|       |FaceVisivel:'f'|      |Observador:'SETAS'|        |Andar-'a/s'|        |Rodar -'e/d'| ");
 
-	inicializa();
+	init();
 
 	glutSpecialFunc(teclasNotAscii);
 	glutDisplayFunc(display);
 	glutKeyboardFunc(keyboard);
 	glutKeyboardUpFunc(keyRelease);
-	glutReshapeFunc(reshape); // Register callback handler for window re-size event
+	glutReshapeFunc(resize);
 	glutMotionFunc(mouse);
 	glutPassiveMotionFunc(mouse);
 	glutIdleFunc(update);
