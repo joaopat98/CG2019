@@ -128,7 +128,7 @@ const int num_angels = 1000;
 GLfloat angel_delta = 0.2;
 Angel angels[num_angels];
 int angel_pos = 0;
-GLfloat angelSize = 4;
+GLfloat angelSize = 2;
 GLfloat minAngelRad = 30, maxAngelRad = 50;
 /* #endregion */
 
@@ -162,8 +162,16 @@ void frontAngel()
 void init(void)
 {
 	glClearColor(BLACK);
+	glEnable(GL_MULTISAMPLE);
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_COLOR_MATERIAL);
+	glEnable(GL_NORMALIZE);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
 	glShadeModel(GL_SMOOTH);
+	GLfloat ambLight[] = {0.2, 0.2, 0.2};
+	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
+	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambLight);
 	pos.x = cos(pos_state_y * frac * DEGMULT) * pos_state_x * radius;
 	pos.z = sin(pos_state_y * frac * DEGMULT) * pos_state_x * radius;
 	pos.y = pos_state_y * height + y_offset;
@@ -259,6 +267,18 @@ void drawAxes()
 	glEnd();
 }
 
+void drawLights()
+{
+	GLfloat lightPos[4] = {-1, -1, 0};
+	GLfloat lightAmb[4] = {0.0, 0.0, 0.0, 0};
+	GLfloat lightDiffuse[4] = {0.8, 0.8, 0.8, 0};
+	GLfloat lightSpecular[4] = {0.5, 0.5, 0.5, 0};
+	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
+	glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmb);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuse);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpecular);
+}
+
 void drawStairs()
 {
 	glColor3f(1, 1, 1);
@@ -277,16 +297,26 @@ void drawStairs()
 	glPushMatrix();
 	{
 		glRotatef(frac * step_begin - step_under, 0, 1, 0);
+		float white[] = {1.0, 1.0, 1.0, 1.0};
+		glMaterialfv(GL_FRONT, GL_AMBIENT, white);
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, white);
+		glMaterialfv(GL_FRONT, GL_SPECULAR, white);
+		glMaterialf(GL_FRONT, GL_SHININESS, 10);
 		for (int i = step_begin - step_under; (i - (step_begin - step_under)) * frac < 360; i++)
 		{
-			glBegin(GL_POLYGON);
-			glColorHSV(i * frac + t * color_time_mult, 1, 1);
-			glVertex3f(x3, (step_begin + step_over) * height, z3);
-			glVertex3f(x3, (step_begin - step_under) * height, z3);
-			glColorHSV((i - 1) * frac + t * color_time_mult, 1, 1);
-			glVertex3f(min_rad, (step_begin - step_under) * height, 0);
-			glVertex3f(min_rad, (step_begin + step_over) * height, 0);
-			glEnd();
+			for (int j = -step_under; j < step_over; j++)
+			{
+				glBegin(GL_QUADS);
+				//glColorHSV(i * frac + t * color_time_mult, 1, 1);
+				glNormal3f(cos(frac * DEGMULT), 0, -sin(frac * DEGMULT));
+				glVertex3f(x3, (step_begin + j + 1) * height, z3);
+				glVertex3f(x3, (step_begin + j) * height, z3);
+				//glColorHSV((i - 1) * frac + t * color_time_mult, 1, 1);
+				glNormal3f(1, 0, 0);
+				glVertex3f(min_rad, (step_begin + j) * height, 0);
+				glVertex3f(min_rad, (step_begin + j + 1) * height, 0);
+				glEnd();
+			}
 
 			glRotatef(frac, 0, 1, 0);
 		}
@@ -304,7 +334,8 @@ void drawStairs()
 		{
 			//front
 			glColorHSV((i - 1) * frac + t * color_time_mult + 120, 1, 1);
-			glBegin(GL_POLYGON);
+			glBegin(GL_QUADS);
+			glNormal3f(0, 0, -1);
 			glVertex3f(min_rad, 0, 0);
 			glVertex3f(radius, 0, 0);
 			glVertex3f(radius, height, 0);
@@ -312,8 +343,9 @@ void drawStairs()
 			glEnd();
 
 			//top
-			glBegin(GL_POLYGON);
+			glBegin(GL_QUADS);
 			glColorHSV((i - 1) * frac + t * color_time_mult, 1, 1);
+			glNormal3f(0, -1, 0);
 			glVertex3f(min_rad, height, 0);
 			glVertex3f(radius, height, 0);
 			glColorHSV(i * frac + t * color_time_mult, 1, 1);
@@ -326,7 +358,8 @@ void drawStairs()
 			{
 				glRotatef(frac, 0, 1, 0);
 				glColorHSV(i * frac + t * color_time_mult + 120, 1, 1);
-				glBegin(GL_POLYGON);
+				glBegin(GL_QUADS);
+				glNormal3f(0, 0, -1);
 				glVertex3f(min_rad, 0, 0);
 				glVertex3f(radius, 0, 0);
 				glVertex3f(radius, height, 0);
@@ -336,7 +369,8 @@ void drawStairs()
 			glPopMatrix();
 
 			//bottom
-			glBegin(GL_POLYGON);
+			glBegin(GL_QUADS);
+			glNormal3f(0, -1, 0);
 			glColorHSV((i - 1) * frac + t * color_time_mult, 1, 1);
 			glVertex3f(min_rad, 0, 0);
 			glVertex3f(radius, 0, 0);
@@ -349,31 +383,36 @@ void drawStairs()
 
 			glColorHSV((i - 1) * frac + t * color_time_mult + 120, 1, 1);
 
-			glBegin(GL_POLYGON);
+			glBegin(GL_QUADS);
+			glNormal3f(0, 0, -1);
 			glVertex3f(radius - border_size, height, 0);
 			glVertex3f(radius, height, 0);
 			glVertex3f(radius, height + border_height, 0);
 			glVertex3f(radius - border_size, height + border_height, 0);
 			glEnd();
 
-			glBegin(GL_POLYGON);
+			glBegin(GL_QUADS);
+			glNormal3f(0, 0, -1);
 			glVertex3f(flerp(radius - border_size, border_x, border_frac), height, flerp(0, border_z, border_frac));
 			glVertex3f(flerp(radius, x2, border_frac), height, flerp(0, z2, border_frac));
 			glVertex3f(flerp(radius, x2, border_frac), height + border_height - border_size, flerp(0, z2, border_frac));
 			glVertex3f(flerp(radius - border_size, border_x, border_frac), height + border_height - border_size, flerp(0, border_z, border_frac));
 			glEnd();
 
-			glBegin(GL_POLYGON);
+			glBegin(GL_QUADS);
 			glColorHSV((i - 1) * frac + t * color_time_mult + 240, 1, 1);
+			glNormal3f(-1, 0, 0);
 			glVertex3f(radius, height + border_height, 0);
 			glVertex3f(radius, height + border_height - border_size, 0);
 			glColorHSV(i * frac + t * color_time_mult + 240, 1, 1);
+			glNormal3f(-cos(frac * DEGMULT), 0, sin(frac * DEGMULT));
 			glVertex3f(x2, height + border_height - border_size, z2);
 			glVertex3f(x2, height + border_height, z2);
 			glEnd();
 
-			glBegin(GL_POLYGON);
+			glBegin(GL_QUADS);
 			glColorHSV((i - 1) * frac + t * color_time_mult + 240, 1, 1);
+			glNormal3f(-1, 0, 0);
 			glVertex3f(radius, height + border_height - border_size, 0);
 			glVertex3f(radius, height, 0);
 			glColorHSV((i - 1 + border_frac) * frac + t * color_time_mult + 240, 1, 1);
@@ -381,17 +420,20 @@ void drawStairs()
 			glVertex3f(flerp(radius, x2, border_frac), height + border_height - border_size, flerp(0, z2, border_frac));
 			glEnd();
 
-			glBegin(GL_POLYGON);
+			glBegin(GL_QUADS);
 			glColorHSV((i - 1) * frac + t * color_time_mult + 240, 1, 1);
+			glNormal3f(-1, 0, 0);
 			glVertex3f(radius - border_size, height + border_height, 0);
 			glVertex3f(radius - border_size, height + border_height - border_size, 0);
 			glColorHSV(i * frac + t * color_time_mult + 240, 1, 1);
+			glNormal3f(-cos(frac * DEGMULT), 0, sin(frac * DEGMULT));
 			glVertex3f(border_x, height + border_height - border_size, border_z);
 			glVertex3f(border_x, height + border_height, border_z);
 			glEnd();
 
-			glBegin(GL_POLYGON);
+			glBegin(GL_QUADS);
 			glColorHSV((i - 1) * frac + t * color_time_mult + 240, 1, 1);
+			glNormal3f(1, 0, 0);
 			glVertex3f(radius - border_size, height, 0);
 			glVertex3f(radius - border_size, height + border_height - border_size, 0);
 			glColorHSV((i - 1 + border_frac) * frac + t * color_time_mult + 240, 1, 1);
@@ -399,7 +441,8 @@ void drawStairs()
 			glVertex3f(flerp(radius - border_size, border_x, border_frac), height, flerp(0, border_z, border_frac));
 			glEnd();
 
-			glBegin(GL_POLYGON);
+			glBegin(GL_QUADS);
+			glNormal3f(0, -1, 0);
 			glColorHSV((i - 1 + border_frac) * frac + t * color_time_mult, 1, 1);
 			glVertex3f(flerp(radius - border_size, border_x, border_frac), height + border_height - border_size, flerp(0, border_z, border_frac));
 			glVertex3f(flerp(radius, x2, border_frac), height + border_height - border_size, flerp(0, z2, border_frac));
@@ -408,7 +451,8 @@ void drawStairs()
 			glVertex3f(border_x, height + border_height - border_size, border_z);
 			glEnd();
 
-			glBegin(GL_POLYGON);
+			glBegin(GL_QUADS);
+			glNormal3f(0, -1, 0);
 			glColorHSV((i - 1) * frac + t * color_time_mult, 1, 1);
 			glVertex3f(radius - border_size, height + border_height, 0);
 			glVertex3f(radius, height + border_height, 0);
@@ -419,11 +463,14 @@ void drawStairs()
 
 			//right
 
-			glBegin(GL_POLYGON);
+			glBegin(GL_QUADS);
+
 			glColorHSV((i - 1) * frac + t * color_time_mult + 240, 1, 1);
+			glNormal3f(1, 0, 0);
 			glVertex3f(radius, 0, 0);
 			glVertex3f(radius, height, 0);
 			glColorHSV(i * frac + t * color_time_mult + 240, 1, 1);
+			glNormal3f(cos(frac * DEGMULT), 0, -sin(frac * DEGMULT));
 			glVertex3f(x2, height, z2);
 			glVertex3f(x2, 0, z2);
 			glEnd();
@@ -474,7 +521,7 @@ void display(void)
 	gluLookAt(pos.x, pos.y, pos.z, dir.x, dir.y, dir.z, 0, 1, 0);
 
 	// draw
-
+	drawLights();
 	drawAxes();
 	drawScene();
 

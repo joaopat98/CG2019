@@ -24,6 +24,7 @@ public:
   Angel(GLfloat base_height, GLfloat delta_height, GLfloat base_rad, GLfloat delta_rad, GLfloat speed, GLfloat size, int index);
   void render();
   void update(GLfloat deltaT);
+  float angleTo(GLfloat ang);
 };
 
 #endif
