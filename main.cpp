@@ -79,6 +79,8 @@ vec3 lerp3(vec3 v1, vec3 v2, GLfloat c)
 
 /* #region  Program Params */
 
+GLuint textures[32];
+
 /* #region  	Mouse */
 int mousex = 0, mousey = 0;
 GLfloat mouse_incr = 0.1;
@@ -168,6 +170,7 @@ void init(void)
 	glEnable(GL_NORMALIZE);
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
+	glEnable(GL_TEXTURE_2D);
 	glShadeModel(GL_SMOOTH);
 	GLfloat ambLight[] = {0.2, 0.2, 0.2};
 	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
@@ -180,6 +183,12 @@ void init(void)
 	{
 		angels[i] = Angel((i - num_angels / (GLfloat)2) * angel_delta, angel_delta, minAngelRad, maxAngelRad, angelSpeed(), angelSize, i);
 	}
+	for(int i = 0; i < 32; i++)
+	{
+		glGenTextures(1, &textures[i]);
+		glBindTexture(GL_TEXTURE_2D, textures[i]);
+	}
+	
 }
 
 void glColorHSV(GLfloat h, GLfloat s, GLfloat v)
@@ -296,6 +305,10 @@ void drawStairs()
 
 	glPushMatrix();
 	{
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,imag.GetNumCols(),imag.GetNumRows(), 0, GL_RGB, GL_UNSIGNED_BYTE,imag.ImageData());
 		glRotatef(frac * step_begin - step_under, 0, 1, 0);
 		float white[] = {1.0, 1.0, 1.0, 1.0};
 		glMaterialfv(GL_FRONT, GL_AMBIENT, white);
