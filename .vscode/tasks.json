@@ -9,8 +9,7 @@
             "command": "g++",
             "args": [
                 "-g",
-                "main.cpp",
-                "angel.cpp",
+                "*.cpp",
                 "-lGL",
                 "-lGLU",
                 "-lglut",

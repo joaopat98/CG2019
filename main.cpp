@@ -3,6 +3,7 @@
 #include <math.h>
 #include <GL/glut.h>
 #include "angel.hpp"
+#include "RgbImage.h"
 
 //--------------------------------- Definir cores
 #define BLUE 0.0, 0.0, 1.0, 1.0
@@ -80,6 +81,7 @@ vec3 lerp3(vec3 v1, vec3 v2, GLfloat c)
 /* #region  Program Params */
 
 GLuint textures[32];
+RgbImage img[32];
 
 /* #region  	Mouse */
 int mousex = 0, mousey = 0;
@@ -183,11 +185,6 @@ void init(void)
 	{
 		angels[i] = Angel((i - num_angels / (GLfloat)2) * angel_delta, angel_delta, minAngelRad, maxAngelRad, angelSpeed(), angelSize, i);
 	}
-	for(int i = 0; i < 32; i++)
-	{
-		glGenTextures(1, &textures[i]);
-		glBindTexture(GL_TEXTURE_2D, textures[i]);
-	}
 	
 }
 
@@ -290,6 +287,20 @@ void drawLights()
 
 void drawStairs()
 {
+
+	glGenTextures(1, &textures[0]);
+	glBindTexture(GL_TEXTURE_2D, textures[0]);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	img[0].LoadBmpFile("images/marble.bmp");
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+	img[0].GetNumCols(),
+	img[0].GetNumRows(), 0, GL_RGB, GL_UNSIGNED_BYTE,
+	img[0].ImageData());
+
 	glColor3f(1, 1, 1);
 	GLfloat x2 = cos(frac * DEGMULT) * radius;
 	GLfloat x3 = cos(frac * DEGMULT) * min_rad;
@@ -302,13 +313,8 @@ void drawStairs()
 	int step_begin = (int)floor(pos_state_y);
 
 	// center pillar
-
 	glPushMatrix();
 	{
-		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,imag.GetNumCols(),imag.GetNumRows(), 0, GL_RGB, GL_UNSIGNED_BYTE,imag.ImageData());
 		glRotatef(frac * step_begin - step_under, 0, 1, 0);
 		float white[] = {1.0, 1.0, 1.0, 1.0};
 		glMaterialfv(GL_FRONT, GL_AMBIENT, white);
@@ -322,11 +328,15 @@ void drawStairs()
 				glBegin(GL_QUADS);
 				//glColorHSV(i * frac + t * color_time_mult, 1, 1);
 				glNormal3f(cos(frac * DEGMULT), 0, -sin(frac * DEGMULT));
+				glTexCoord2f (0.0f, 0.0f);
 				glVertex3f(x3, (step_begin + j + 1) * height, z3);
+				glTexCoord2f (1.0f, 0.0f);
 				glVertex3f(x3, (step_begin + j) * height, z3);
 				//glColorHSV((i - 1) * frac + t * color_time_mult, 1, 1);
 				glNormal3f(1, 0, 0);
+				glTexCoord2f (1.0f, 1.0f);
 				glVertex3f(min_rad, (step_begin + j) * height, 0);
+				glTexCoord2f (0.0f, 1.0f);
 				glVertex3f(min_rad, (step_begin + j + 1) * height, 0);
 				glEnd();
 			}
@@ -349,9 +359,13 @@ void drawStairs()
 			glColorHSV((i - 1) * frac + t * color_time_mult + 120, 1, 1);
 			glBegin(GL_QUADS);
 			glNormal3f(0, 0, -1);
+			glTexCoord2f (0.0f, 0.0f);
 			glVertex3f(min_rad, 0, 0);
+			glTexCoord2f (1.0f, 0.0f);
 			glVertex3f(radius, 0, 0);
+			glTexCoord2f (1.0f, 1.0f);
 			glVertex3f(radius, height, 0);
+			glTexCoord2f (0.0f, 1.0f);
 			glVertex3f(min_rad, height, 0);
 			glEnd();
 
@@ -359,10 +373,14 @@ void drawStairs()
 			glBegin(GL_QUADS);
 			glColorHSV((i - 1) * frac + t * color_time_mult, 1, 1);
 			glNormal3f(0, -1, 0);
+			glTexCoord2f (0.0f, 0.0f);
 			glVertex3f(min_rad, height, 0);
+			glTexCoord2f (1.0f, 0.0f);
 			glVertex3f(radius, height, 0);
 			glColorHSV(i * frac + t * color_time_mult, 1, 1);
+			glTexCoord2f (1.0f, 1.0f);
 			glVertex3f(x2, height, z2);
+			glTexCoord2f (0.0f, 1.0f);
 			glVertex3f(x3, height, z3);
 			glEnd();
 
@@ -373,9 +391,13 @@ void drawStairs()
 				glColorHSV(i * frac + t * color_time_mult + 120, 1, 1);
 				glBegin(GL_QUADS);
 				glNormal3f(0, 0, -1);
+				glTexCoord2f (0.0f, 0.0f);
 				glVertex3f(min_rad, 0, 0);
+				glTexCoord2f (1.0f, 0.0f);
 				glVertex3f(radius, 0, 0);
+				glTexCoord2f (1.0f, 1.0f);
 				glVertex3f(radius, height, 0);
+				glTexCoord2f (0.0f, 1.0f);
 				glVertex3f(min_rad, height, 0);
 				glEnd();
 			}
@@ -385,10 +407,14 @@ void drawStairs()
 			glBegin(GL_QUADS);
 			glNormal3f(0, -1, 0);
 			glColorHSV((i - 1) * frac + t * color_time_mult, 1, 1);
+			glTexCoord2f (0.0f, 0.0f);
 			glVertex3f(min_rad, 0, 0);
+			glTexCoord2f (1.0f, 0.0f);
 			glVertex3f(radius, 0, 0);
 			glColorHSV(i * frac + t * color_time_mult, 1, 1);
+			glTexCoord2f (1.0f, 1.0f);
 			glVertex3f(x2, 0, z2);
+			glTexCoord2f (0.0f, 1.0f);
 			glVertex3f(x3, 0, z3);
 			glEnd();
 
@@ -487,7 +513,6 @@ void drawStairs()
 			glVertex3f(x2, height, z2);
 			glVertex3f(x2, 0, z2);
 			glEnd();
-
 			glRotatef(frac, 0, 1, 0);
 			glTranslatef(0, height, 0);
 		}
