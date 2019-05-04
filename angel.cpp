@@ -35,9 +35,13 @@ void Angel::render()
         glBegin(GL_POLYGON);
         {
             glNormal3f(0, 0, -1);
+            glTexCoord2f (0.0f, 0.0f);
             glVertex3f(-size / 2, -size / 2, 0);
+            glTexCoord2f (1.0f, 0.0f);
             glVertex3f(size / 2, -size / 2, 0);
+            glTexCoord2f (1.0f, 1.0f);
             glVertex3f(size / 2, size / 2, 0);
+            glTexCoord2f (0.0f, 1.0f);
             glVertex3f(-size / 2, size / 2, 0);
         }
         glEnd();

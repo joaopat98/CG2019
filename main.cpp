@@ -529,6 +529,18 @@ void drawStairs()
 
 void drawAngels()
 {
+	glGenTextures(1, &textures[3]);
+		glBindTexture(GL_TEXTURE_2D, textures[3]);
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+		img[3].LoadBmpFile("images/pedra.bmp");
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+		img[3].GetNumCols(),
+		img[3].GetNumRows(), 0, GL_RGB, GL_UNSIGNED_BYTE,
+		img[3].ImageData()); 
 	for (int i = 0; i < num_angels; i++)
 	{
 		angels[i].render();
