@@ -4,6 +4,7 @@
 #include <GL/glut.h>
 #include "angel.hpp"
 #include "RgbImage.h"
+#include "png.h"
 
 //--------------------------------- Definir cores
 #define BLUE 0.0, 0.0, 1.0, 1.0
@@ -81,7 +82,10 @@ vec3 lerp3(vec3 v1, vec3 v2, GLfloat c)
 /* #region  Program Params */
 
 GLuint textures[32];
-RgbImage img[32];
+RgbImage img;
+
+GLUquadricObj *sky = gluNewQuadric();
+GLfloat sizeSky = 200;
 
 /* #region  	Mouse */
 int mousex = 0, mousey = 0;
@@ -128,11 +132,12 @@ GLfloat angZoom = 90;
 /* #endregion */
 
 /* #region  	Angels */
-const int num_angels = 1000;
-GLfloat angel_delta = 0.2;
+const int num_angels = 100;
+GLfloat angel_space = 200;
+GLfloat angel_delta = angel_space / num_angels;
 Angel angels[num_angels];
 int angel_pos = 0;
-GLfloat angelSize = 2;
+GLfloat angelSize = 6;
 GLfloat minAngelRad = 30, maxAngelRad = 50;
 /* #endregion */
 
@@ -140,7 +145,7 @@ GLfloat minAngelRad = 30, maxAngelRad = 50;
 
 GLfloat angelSpeed()
 {
-	return 5 + frand() * 10;
+	return 2 + frand() * 20;
 }
 
 void backAngel()
@@ -163,6 +168,74 @@ void frontAngel()
 	angel_pos++;
 }
 
+void init_textures()
+{
+	glGenTextures(5, textures);
+
+	glBindTexture(GL_TEXTURE_2D, textures[0]);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	img.LoadBmpFile("images/pillar.bmp");
+	glTexImage2D(GL_TEXTURE_2D, 0, 3,
+				 img.GetNumCols(),
+				 img.GetNumRows(), 0, GL_RGB, GL_UNSIGNED_BYTE,
+				 img.ImageData());
+
+	glBindTexture(GL_TEXTURE_2D, textures[1]);
+	img.LoadBmpFile("images/marble.bmp");
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexImage2D(GL_TEXTURE_2D, 0, 3,
+				 img.GetNumCols(),
+				 img.GetNumRows(), 0, GL_RGB, GL_UNSIGNED_BYTE,
+				 img.ImageData());
+
+	/*
+	glBindTexture(GL_TEXTURE_2D, textures[2]);
+	img.LoadBmpFile("images/angel.bmp");
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	glTexImage2D(GL_TEXTURE_2D, 0, 3,
+				 img.GetNumCols(),
+				 img.GetNumRows(), 0, GL_RGB, GL_UNSIGNED_BYTE,
+				 img.ImageData());
+*/
+
+	int w, h;
+	textures[2] = loadTexture("images/angel.png", w, h);
+	//textures[3] = loadTexture("images/skyBox.png", w, h);
+	glBindTexture(GL_TEXTURE_2D, textures[3]);
+	img.LoadBmpFile("images/skyBox.bmp");
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	glTexImage2D(GL_TEXTURE_2D, 0, 3,
+				 img.GetNumCols(),
+				 img.GetNumRows(), 0, GL_RGB, GL_UNSIGNED_BYTE,
+				 img.ImageData());
+
+	glBindTexture(GL_TEXTURE_2D, textures[4]);
+	img.LoadBmpFile("images/railing.bmp");
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	glTexImage2D(GL_TEXTURE_2D, 0, 3,
+				 img.GetNumCols(),
+				 img.GetNumRows(), 0, GL_RGB, GL_UNSIGNED_BYTE,
+				 img.ImageData());
+}
+
 void init(void)
 {
 	glClearColor(BLACK);
@@ -177,6 +250,7 @@ void init(void)
 	GLfloat ambLight[] = {0.2, 0.2, 0.2};
 	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambLight);
+	init_textures();
 	pos.x = cos(pos_state_y * frac * DEGMULT) * pos_state_x * radius;
 	pos.z = sin(pos_state_y * frac * DEGMULT) * pos_state_x * radius;
 	pos.y = pos_state_y * height + y_offset;
@@ -185,7 +259,6 @@ void init(void)
 	{
 		angels[i] = Angel((i - num_angels / (GLfloat)2) * angel_delta, angel_delta, minAngelRad, maxAngelRad, angelSpeed(), angelSize, i);
 	}
-	
 }
 
 void glColorHSV(GLfloat h, GLfloat s, GLfloat v)
@@ -273,12 +346,27 @@ void drawAxes()
 	glEnd();
 }
 
+void drawSky()
+{
+
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+	glPushMatrix();
+	glBindTexture(GL_TEXTURE_2D, textures[3]);
+	glTranslatef(0, pos.y, 0);
+	glRotatef(-90, 1, 0, 0);
+	gluQuadricDrawStyle(sky, GLU_FILL);
+	gluQuadricNormals(sky, GLU_SMOOTH);
+	gluQuadricTexture(sky, GL_TRUE);
+	gluSphere(sky, sizeSky * 1, 150, 150);
+	glPopMatrix();
+}
+
 void drawLights()
 {
 	GLfloat lightPos[4] = {-1, -1, 0};
 	GLfloat lightAmb[4] = {0.0, 0.0, 0.0, 0};
-	GLfloat lightDiffuse[4] = {0.8, 0.8, 0.8, 0};
-	GLfloat lightSpecular[4] = {0.5, 0.5, 0.5, 0};
+	GLfloat lightDiffuse[4] = {1, 0.9, 0.8, 0};
+	GLfloat lightSpecular[4] = {0.5, 0.45, 0.4, 0};
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
 	glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmb);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuse);
@@ -288,11 +376,14 @@ void drawLights()
 void drawStairs()
 {
 
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
 	glColor3f(1, 1, 1);
 	GLfloat x2 = cos(frac * DEGMULT) * radius;
 	GLfloat x3 = cos(frac * DEGMULT) * min_rad;
 	GLfloat z2 = -sin(frac * DEGMULT) * radius;
 	GLfloat z3 = -sin(frac * DEGMULT) * min_rad;
+	GLfloat full_y = tan(frac) * radius;
 	GLfloat border_frac = border_size / dist2(radius, 0, x2, z2);
 	GLfloat border_x = cos(frac * DEGMULT) * (radius - border_size);
 	GLfloat border_z = -sin(frac * DEGMULT) * (radius - border_size);
@@ -302,18 +393,8 @@ void drawStairs()
 	// center pillar
 	glPushMatrix();
 	{
-		glGenTextures(1, &textures[0]);
 		glBindTexture(GL_TEXTURE_2D, textures[0]);
-		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-		img[0].LoadBmpFile("images/stonev.bmp");
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-		img[0].GetNumCols(),
-		img[0].GetNumRows(), 0, GL_RGB, GL_UNSIGNED_BYTE,
-		img[0].ImageData()); 
+		//glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 		glRotatef(frac * step_begin - step_under, 0, 1, 0);
 		float white[] = {1.0, 1.0, 1.0, 1.0};
 		glMaterialfv(GL_FRONT, GL_AMBIENT, white);
@@ -327,15 +408,15 @@ void drawStairs()
 				glBegin(GL_QUADS);
 				//glColorHSV(i * frac + t * color_time_mult, 1, 1);
 				glNormal3f(cos(frac * DEGMULT), 0, -sin(frac * DEGMULT));
-				glTexCoord2f (0.0f, 0.0f);
+				glTexCoord2f(0.0f, 0.0f);
 				glVertex3f(x3, (step_begin + j + 1) * height, z3);
-				glTexCoord2f (1.0f, 0.0f);
+				glTexCoord2f(1.0f, 0.0f);
 				glVertex3f(x3, (step_begin + j) * height, z3);
 				//glColorHSV((i - 1) * frac + t * color_time_mult, 1, 1);
 				glNormal3f(1, 0, 0);
-				glTexCoord2f (1.0f, 1.0f);
+				glTexCoord2f(1.0f, 1.0f);
 				glVertex3f(min_rad, (step_begin + j) * height, 0);
-				glTexCoord2f (0.0f, 1.0f);
+				glTexCoord2f(0.0f, 1.0f);
 				glVertex3f(min_rad, (step_begin + j + 1) * height, 0);
 				glEnd();
 			}
@@ -349,17 +430,6 @@ void drawStairs()
 
 	glPushMatrix();
 	{
-		glBindTexture(GL_TEXTURE_2D, textures[1]);
-		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		img[1].LoadBmpFile("images/marble.bmp");
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-		img[1].GetNumCols(),
-		img[1].GetNumRows(), 0, GL_RGB, GL_UNSIGNED_BYTE,
-		img[1].ImageData());
 		glRotatef(frac * step_begin - step_under, 0, 1, 0);
 		glTranslatef(0, (step_begin - step_under) * height, 0);
 
@@ -370,17 +440,19 @@ void drawStairs()
 		glMaterialf(GL_FRONT, GL_SHININESS, 10);
 		for (int i = step_begin - step_under; i < step_begin + step_over; i++)
 		{
+
+			glBindTexture(GL_TEXTURE_2D, textures[1]);
 			//front
 			//glColorHSV((i - 1) * frac + t * color_time_mult + 120, 1, 1);
 			glBegin(GL_QUADS);
 			glNormal3f(0, 0, -1);
-			glTexCoord2f (0.0f, 0.0f);
+			glTexCoord2f(0.0f, 0.0f);
 			glVertex3f(min_rad, 0, 0);
-			glTexCoord2f (1.0f, 0.0f);
+			glTexCoord2f(1.0f, 0.0f);
 			glVertex3f(radius, 0, 0);
-			glTexCoord2f (1.0f, 1.0f);
+			glTexCoord2f(1.0f, 1.0f);
 			glVertex3f(radius, height, 0);
-			glTexCoord2f (0.0f, 1.0f);
+			glTexCoord2f(0.0f, 1.0f);
 			glVertex3f(min_rad, height, 0);
 			glEnd();
 
@@ -388,14 +460,14 @@ void drawStairs()
 			glBegin(GL_QUADS);
 			//glColorHSV((i - 1) * frac + t * color_time_mult, 1, 1);
 			glNormal3f(0, -1, 0);
-			glTexCoord2f (0.0f, 0.0f);
+			glTexCoord2f(0.0f, 0.0f);
 			glVertex3f(min_rad, height, 0);
-			glTexCoord2f (1.0f, 0.0f);
+			glTexCoord2f(1.0f, 0.0f);
 			glVertex3f(radius, height, 0);
 			//glColorHSV(i * frac + t * color_time_mult, 1, 1);
-			glTexCoord2f (1.0f, 1.0f);
+			glTexCoord2f(1.0, 1.0);
 			glVertex3f(x2, height, z2);
-			glTexCoord2f (0.0f, 1.0f);
+			glTexCoord2f(0.0, z3 / z2);
 			glVertex3f(x3, height, z3);
 			glEnd();
 
@@ -406,9 +478,13 @@ void drawStairs()
 				//glColorHSV(i * frac + t * color_time_mult + 120, 1, 1);
 				glBegin(GL_QUADS);
 				glNormal3f(0, 0, -1);
+				glTexCoord2f(0.0f, 0.0f);
 				glVertex3f(min_rad, 0, 0);
+				glTexCoord2f(1.0f, 0.0f);
 				glVertex3f(radius, 0, 0);
+				glTexCoord2f(1.0f, 1.0f);
 				glVertex3f(radius, height, 0);
+				glTexCoord2f(0.0f, 1.0f);
 				glVertex3f(min_rad, height, 0);
 				glEnd();
 			}
@@ -418,92 +494,130 @@ void drawStairs()
 			glBegin(GL_QUADS);
 			glNormal3f(0, -1, 0);
 			//glColorHSV((i - 1) * frac + t * color_time_mult, 1, 1);
+			glTexCoord2f(0.0f, 0.0f);
 			glVertex3f(min_rad, 0, 0);
+			glTexCoord2f(1.0f, 0.0f);
 			glVertex3f(radius, 0, 0);
 			//glColorHSV(i * frac + t * color_time_mult, 1, 1);
+			glTexCoord2f(1.0f, 1.0f);
 			glVertex3f(x2, 0, z2);
+			glTexCoord2f(0.0f, z3 / z3);
 			glVertex3f(x3, 0, z3);
 			glEnd();
 
 			//railing
 
+			glBindTexture(GL_TEXTURE_2D, textures[4]);
+
 			//glColorHSV((i - 1) * frac + t * color_time_mult + 120, 1, 1);
 
 			glBegin(GL_QUADS);
 			glNormal3f(0, 0, -1);
+			glTexCoord2f(0.0f, 0.0f);
 			glVertex3f(radius - border_size, height, 0);
+			glTexCoord2f(1.0f, 0.0f);
 			glVertex3f(radius, height, 0);
+			glTexCoord2f(1.0f, 1.0f);
 			glVertex3f(radius, height + border_height, 0);
+			glTexCoord2f(0.0f, 1.0f);
 			glVertex3f(radius - border_size, height + border_height, 0);
 			glEnd();
 
 			glBegin(GL_QUADS);
 			glNormal3f(0, 0, -1);
+			glTexCoord2f(0.0f, 0.0f);
 			glVertex3f(flerp(radius - border_size, border_x, border_frac), height, flerp(0, border_z, border_frac));
+			glTexCoord2f(1.0f, 0.0f);
 			glVertex3f(flerp(radius, x2, border_frac), height, flerp(0, z2, border_frac));
+			glTexCoord2f(1.0f, 1.0f);
 			glVertex3f(flerp(radius, x2, border_frac), height + border_height - border_size, flerp(0, z2, border_frac));
+			glTexCoord2f(0.0f, 1.0f);
 			glVertex3f(flerp(radius - border_size, border_x, border_frac), height + border_height - border_size, flerp(0, border_z, border_frac));
 			glEnd();
 
 			glBegin(GL_QUADS);
 			//glColorHSV((i - 1) * frac + t * color_time_mult + 240, 1, 1);
 			glNormal3f(-1, 0, 0);
+			glTexCoord2f(0.0f, 0.0f);
 			glVertex3f(radius, height + border_height, 0);
+			glTexCoord2f(1.0f, 0.0f);
 			glVertex3f(radius, height + border_height - border_size, 0);
 			//glColorHSV(i * frac + t * color_time_mult + 240, 1, 1);
 			glNormal3f(-cos(frac * DEGMULT), 0, sin(frac * DEGMULT));
+			glTexCoord2f(1.0f, 1.0f);
 			glVertex3f(x2, height + border_height - border_size, z2);
+			glTexCoord2f(0.0f, 1.0f);
 			glVertex3f(x2, height + border_height, z2);
 			glEnd();
 
 			glBegin(GL_QUADS);
 			//glColorHSV((i - 1) * frac + t * color_time_mult + 240, 1, 1);
 			glNormal3f(-1, 0, 0);
+			glTexCoord2f(1.0f, 0.0f);
 			glVertex3f(radius, height + border_height - border_size, 0);
+			glTexCoord2f(1.0f, 1.0f);
 			glVertex3f(radius, height, 0);
 			//glColorHSV((i - 1 + border_frac) * frac + t * color_time_mult + 240, 1, 1);
+			glTexCoord2f(0.0f, 1.0f);
 			glVertex3f(flerp(radius, x2, border_frac), height, flerp(0, z2, border_frac));
+			glTexCoord2f(0.0f, 0.0f);
 			glVertex3f(flerp(radius, x2, border_frac), height + border_height - border_size, flerp(0, z2, border_frac));
 			glEnd();
 
 			glBegin(GL_QUADS);
 			//glColorHSV((i - 1) * frac + t * color_time_mult + 240, 1, 1);
 			glNormal3f(-1, 0, 0);
+			glTexCoord2f(0.0f, 0.0f);
 			glVertex3f(radius - border_size, height + border_height, 0);
+			glTexCoord2f(1.0f, 0.0f);
 			glVertex3f(radius - border_size, height + border_height - border_size, 0);
 			//glColorHSV(i * frac + t * color_time_mult + 240, 1, 1);
 			glNormal3f(-cos(frac * DEGMULT), 0, sin(frac * DEGMULT));
+			glTexCoord2f(1.0f, 1.0f);
 			glVertex3f(border_x, height + border_height - border_size, border_z);
+			glTexCoord2f(0.0f, 1.0f);
 			glVertex3f(border_x, height + border_height, border_z);
 			glEnd();
 
 			glBegin(GL_QUADS);
 			//glColorHSV((i - 1) * frac + t * color_time_mult + 240, 1, 1);
 			glNormal3f(1, 0, 0);
+			glTexCoord2f(1.0f, 0.0f);
 			glVertex3f(radius - border_size, height, 0);
+			glTexCoord2f(1.0f, 1.0f);
 			glVertex3f(radius - border_size, height + border_height - border_size, 0);
 			//glColorHSV((i - 1 + border_frac) * frac + t * color_time_mult + 240, 1, 1);
+			glTexCoord2f(0.0f, 1.0f);
 			glVertex3f(flerp(radius - border_size, border_x, border_frac), height + border_height - border_size, flerp(0, border_z, border_frac));
+			glTexCoord2f(0.0f, 0.0f);
 			glVertex3f(flerp(radius - border_size, border_x, border_frac), height, flerp(0, border_z, border_frac));
 			glEnd();
 
 			glBegin(GL_QUADS);
 			glNormal3f(0, -1, 0);
 			//glColorHSV((i - 1 + border_frac) * frac + t * color_time_mult, 1, 1);
+			glTexCoord2f(0.0f, 0.0f);
 			glVertex3f(flerp(radius - border_size, border_x, border_frac), height + border_height - border_size, flerp(0, border_z, border_frac));
+			glTexCoord2f(1.0f, 0.0f);
 			glVertex3f(flerp(radius, x2, border_frac), height + border_height - border_size, flerp(0, z2, border_frac));
 			//glColorHSV(i * frac + t * color_time_mult, 1, 1);
+			glTexCoord2f(1.0f, 1.0f);
 			glVertex3f(x2, height + border_height - border_size, z2);
+			glTexCoord2f(0.0f, 1.0f);
 			glVertex3f(border_x, height + border_height - border_size, border_z);
 			glEnd();
 
 			glBegin(GL_QUADS);
 			glNormal3f(0, -1, 0);
 			//glColorHSV((i - 1) * frac + t * color_time_mult, 1, 1);
+			glTexCoord2f(0.0f, 0.0f);
 			glVertex3f(radius - border_size, height + border_height, 0);
+			glTexCoord2f(1.0f, 0.0f);
 			glVertex3f(radius, height + border_height, 0);
 			//glColorHSV(i * frac + t * color_time_mult, 1, 1);
+			glTexCoord2f(1.0f, 1.0f);
 			glVertex3f(x2, height + border_height, z2);
+			glTexCoord2f(0.0f, 1.0f);
 			glVertex3f(border_x, height + border_height, border_z);
 			glEnd();
 
@@ -513,11 +627,16 @@ void drawStairs()
 
 			//glColorHSV((i - 1) * frac + t * color_time_mult + 240, 1, 1);
 			glNormal3f(1, 0, 0);
+
+			glTexCoord2f(0.0f, 0.0f);
 			glVertex3f(radius, 0, 0);
+			glTexCoord2f(1.0f, 0.0f);
 			glVertex3f(radius, height, 0);
 			//glColorHSV(i * frac + t * color_time_mult + 240, 1, 1);
 			glNormal3f(cos(frac * DEGMULT), 0, -sin(frac * DEGMULT));
+			glTexCoord2f(1.0f, 1.0f);
 			glVertex3f(x2, height, z2);
+			glTexCoord2f(0.0f, 1.0f);
 			glVertex3f(x2, 0, z2);
 			glEnd();
 			glRotatef(frac, 0, 1, 0);
@@ -529,26 +648,24 @@ void drawStairs()
 
 void drawAngels()
 {
-	glGenTextures(1, &textures[3]);
-		glBindTexture(GL_TEXTURE_2D, textures[3]);
-		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-		img[3].LoadBmpFile("images/pedra.bmp");
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-		img[3].GetNumCols(),
-		img[3].GetNumRows(), 0, GL_RGB, GL_UNSIGNED_BYTE,
-		img[3].ImageData()); 
+
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	glEnable(GL_BLEND);
+	glAlphaFunc(GL_GREATER, 0.5);
+	glEnable(GL_ALPHA_TEST);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glBindTexture(GL_TEXTURE_2D, textures[2]);
 	for (int i = 0; i < num_angels; i++)
 	{
 		angels[i].render();
 	}
+	glDisable(GL_BLEND);
+	glDisable(GL_ALPHA_TEST);
 }
 
 void drawScene()
 {
+	drawSky();
 	drawStairs();
 	drawAngels();
 }
