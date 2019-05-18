@@ -21,7 +21,7 @@ Angel::Angel(GLfloat base_height, GLfloat delta_height, GLfloat base_rad, GLfloa
 
 void Angel::render()
 {
-    GLfloat emission[] = {1.0, 1.0, 1.0, 0.0};
+    GLfloat emission[] = {0.5, 0.5, 0.5, 0.0};
     float white[] = {1.0, 1.0, 1.0, 1.0};
     glMaterialfv(GL_FRONT, GL_AMBIENT, white);
     glMaterialfv(GL_FRONT, GL_DIFFUSE, white);
@@ -34,7 +34,7 @@ void Angel::render()
         glRotatef(-angle + 90, 0, 1, 0);
         glBegin(GL_POLYGON);
         {
-            glNormal3f(0, 0, -1);
+            glNormal3f(0, 0, 1);
             glTexCoord2f (0.0f, 0.0f);
             glVertex3f(-size / 2, -size / 2, 0);
             glTexCoord2f (1.0f, 0.0f);
