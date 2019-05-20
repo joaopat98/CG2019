@@ -104,7 +104,7 @@ GLfloat mouse_incr = 0.1;
 int step_under = 25, step_over = 25;
 GLfloat min_rad = 5, radius = 30, frac = 20, height = 2;
 GLfloat color_time_mult = 100;
-GLfloat day_length = 10;
+GLfloat day_length = 100;
 GLfloat day_time = day_length;
 GLfloat day_contrast = 3;
 GLfloat day_state;
@@ -787,14 +787,14 @@ void drawStairs()
 
 				glBegin(GL_QUADS);
 				//glColorHSV((i - 1) * frac + t * color_time_mult + 240, 1, 1);
-				glTexCoord2f(0.0f, 0.0f);
-				glVertex3f(border_x, height + border_height - border_size, border_z);
 				glTexCoord2f(1.0f, 0.0f);
+				glVertex3f(border_x, height + border_height - border_size, border_z);
+				glTexCoord2f(1.0f, 1.0f);
 				glVertex3f(radius - border_size, height + border_height - border_size, 0);
 				//glColorHSV(i * frac + t * color_time_mult + 240, 1, 1);
-				glTexCoord2f(1.0f, 1.0f);
-				glVertex3f(radius - border_size, height + border_height, 0);
 				glTexCoord2f(0.0f, 1.0f);
+				glVertex3f(radius - border_size, height + border_height, 0);
+				glTexCoord2f(0.0f, 0.0f);
 				glVertex3f(border_x, height + border_height, border_z);
 				glEnd();
 
