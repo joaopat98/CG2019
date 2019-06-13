@@ -32,19 +32,21 @@ public:
 
 class ParticleSystem
 {
-private:
-    int num_particles;
-    GLfloat particle_size;
-    vec3 color;
-    Particle *particles;
-
 public:
+    Particle *particles;
+    int num_particles;
+    GLfloat particle_size, speed;
+    GLuint texture;
+    vec3 color;
     vec3 pos;
     GLfloat time = 0;
     int type;
     bool ended;
+    void (*update_fn)(Particle *, GLfloat);
+    void (*render_fn)(Particle *);
 
-    ParticleSystem(vec3 pos, vec3 color, int num_particles, GLfloat speed, GLfloat particle_size, GLuint texture, void (*init_fn)(Particle *, int), void (*update_fn)(Particle *, GLfloat), void (*render_fn)(Particle *), int type);
+    ParticleSystem();
+    ParticleSystem(vec3 pos, vec3 color, int num_particles, GLfloat speed, GLfloat particle_size, GLuint texture, void (*init_fn)(ParticleSystem *, int), void (*update_fn)(Particle *, GLfloat), void (*render_fn)(Particle *), int type);
     ~ParticleSystem();
     void reset();
     void update(GLfloat deltaT);

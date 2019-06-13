@@ -1,10 +1,19 @@
 #include "particles.h"
 
-ParticleSystem::ParticleSystem(vec3 pos, vec3 color, int num_particles, GLfloat speed, GLfloat particle_size, GLuint texture, void (*init_fn)(Particle *, int), void (*update_fn)(Particle *, GLfloat), void (*render_fn)(Particle *), int type)
+ParticleSystem::ParticleSystem(vec3 pos, vec3 color, int num_particles, GLfloat speed, GLfloat particle_size, GLuint texture, void (*init_fn)(ParticleSystem *, int), void (*update_fn)(Particle *, GLfloat), void (*render_fn)(Particle *), int type)
 {
-    particles = (Particle *)malloc(num_particles * sizeof(Particle));
+    this->pos = pos;
+    this->color = color;
+    this->num_particles = num_particles;
+    this->speed = speed;
+    this->particle_size = particle_size;
+    this->texture = texture;
+    this->type = type;
+    this->update_fn = update_fn;
+    this->render_fn = render_fn;
+    particles = new Particle[num_particles];
     if (init_fn)
-        init_fn(particles, num_particles);
+        init_fn(this, num_particles);
     else
     {
         for (int i = 0; i < num_particles; i++)
@@ -13,20 +22,25 @@ ParticleSystem::ParticleSystem(vec3 pos, vec3 color, int num_particles, GLfloat 
             particles[i] = Particle(pos, speed * frand() * dir, color, particle_size, texture, update_fn, render_fn);
         }
     }
-    this->pos = pos;
-    this->num_particles = num_particles;
-    this->type = type;
+}
+
+ParticleSystem::ParticleSystem()
+{
 }
 
 ParticleSystem::~ParticleSystem()
 {
-    free(particles);
 }
 
 void ParticleSystem::update(GLfloat deltaT)
 {
+    bool has_ended = true;
     for (int i = 0; i < num_particles; i++)
+    {
         particles[i].update(deltaT);
+        has_ended = particles[i].ended && has_ended;
+    }
+    ended = has_ended;
 }
 
 void ParticleSystem::reset()
@@ -51,6 +65,10 @@ Particle::Particle(vec3 init_pos, vec3 dir, vec3 color, GLfloat size, GLuint tex
     this->texture = texture;
     this->update_fn = update_fn;
     this->render_fn = render_fn;
+}
+
+Particle::Particle()
+{
 }
 
 Particle::~Particle()

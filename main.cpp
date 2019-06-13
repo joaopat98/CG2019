@@ -3,7 +3,7 @@
 #include <math.h>
 //#include "shaders.h"
 #include <GL/glut.h>
-#include <vector>
+#include <list>
 //#include <vector>
 #include "angel.hpp"
 #include "RgbImage.h"
@@ -28,11 +28,11 @@ using namespace std;
 
 GLfloat t = 0;
 
-int num_fireworks;
+int num_fireworks = 0;
 
-int firworks_speed = 2;
+GLfloat fireworks_speed = 1;
 
-vector<ParticleSystem> particle_systems;
+list<ParticleSystem> particle_systems;
 
 /* #region  Program Params */
 
@@ -137,7 +137,7 @@ void frontAngel()
 
 void init_textures()
 {
-	glGenTextures(6, textures);
+	glGenTextures(7, textures);
 
 	glBindTexture(GL_TEXTURE_2D, textures[0]);
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
@@ -243,6 +243,8 @@ void init_textures()
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+	textures[6] = loadTexture("images/explosion.png", w, h);
 }
 
 void init(void)
@@ -535,6 +537,43 @@ void drawLights()
 	glutSolidCube(1);
 	glPopMatrix();
 	*/
+}
+
+void drawParticle(Particle *p)
+{
+	glEnable(GL_TEXTURE_2D);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	glEnable(GL_BLEND);
+	glAlphaFunc(GL_GREATER, 0.5);
+	glEnable(GL_ALPHA_TEST);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glBindTexture(GL_TEXTURE_2D, textures[6]);
+	float white[] = {1.0, 1.0, 1.0, 1.0};
+	glMaterialfv(GL_FRONT, GL_AMBIENT, white);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, white);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, white);
+	glMaterialfv(GL_FRONT, GL_EMISSION, white);
+	glMaterialfv(GL_BACK, GL_EMISSION, white);
+	glBegin(GL_QUADS);
+	{
+		glTexCoord2f(0.0f, 0.0f);
+		glVertex3f(-p->size / 2, -p->size / 2, 0);
+		glTexCoord2f(0.0f, 1.0f);
+		glVertex3f(-p->size / 2, p->size / 2, 0);
+		glTexCoord2f(1.0f, 1.0f);
+		glVertex3f(p->size / 2, p->size / 2, 0);
+		glTexCoord2f(1.0f, 0.0f);
+		glVertex3f(p->size / 2, -p->size / 2, 0);
+	}
+	glEnd();
+
+	float zeroArr[] = {0, 0, 0, 0};
+	glMaterialfv(GL_FRONT, GL_EMISSION, zeroArr);
+	glMaterialfv(GL_BACK, GL_EMISSION, zeroArr);
+
+	glDisable(GL_BLEND);
+	glDisable(GL_ALPHA_TEST);
+	glDisable(GL_TEXTURE_2D);
 }
 
 void drawStairs()
@@ -848,6 +887,11 @@ void drawScene()
 {
 	drawStairs();
 	drawAngels();
+	for (list<ParticleSystem>::iterator it = particle_systems.begin(); it != particle_systems.end(); it++)
+	{
+		it->render(pos);
+	}
+
 	DrawSkyBox(3);
 	glEnable(GL_BLEND);
 	glBlendColor(day_state, day_state, day_state, day_state);
@@ -946,6 +990,10 @@ void keyboard(unsigned char key, int x, int y)
 			curVel = jumpVel;
 		}
 		break;
+	case 'n':
+	case 'N':
+		day_time = floor((day_time + 0.5) / 0.5) * 0.5;
+		break;
 	//--------------------------- Escape
 	case 27:
 		exit(0);
@@ -1020,6 +1068,49 @@ void mouse(int x, int y)
 		rot.y = 85;
 	if (rot.y < -85)
 		rot.y = -85;
+}
+
+void initTrail(ParticleSystem *system, int num_particles)
+{
+	for (int i = 0; i < num_particles; i++)
+	{
+		vec3 dir = normalize(vec3{(frand() * 2 - 1) * 0.01, 1, (frand() * 2 - 1) * 0.01});
+		system->particles[i] = Particle(system->pos, system->speed * frand() * dir, system->color, system->particle_size, system->texture, system->update_fn, system->render_fn);
+	}
+}
+
+void initBurst(ParticleSystem *system, int num_particles)
+{
+	for (int i = 0; i < num_particles; i++)
+	{
+		vec3 dir = normalize(vec3{frand() * 2 - 1, (frand() * 0.5) + 0.5, frand() * 2 - 1});
+		system->particles[i] = Particle(system->pos, system->speed * frand() * dir, system->color, system->particle_size, system->texture, system->update_fn, system->render_fn);
+	}
+}
+
+void updateTrail(Particle *p, GLfloat deltaT)
+{
+	vec3 old_pos = p->pos;
+	p->pos += p->dir * deltaT;
+	p->dir *= 1 - 2 * deltaT;
+	p->size *= 1 - 1 * deltaT;
+	if (magnitude(p->dir) < 0.2)
+	{
+		p->ended = true;
+	}
+}
+
+void updateBurst(Particle *p, GLfloat deltaT)
+{
+	vec3 old_pos = p->pos;
+	p->pos += p->dir * deltaT;
+	vec3 horiz = vec3{p->dir.x, 0, p->dir.z};
+	p->dir += vec3{0, -1, 0} * magnitude(horiz) * deltaT;
+	p->size *= 1 - 1 * deltaT;
+	if (p->size < 0.05)
+	{
+		p->ended = true;
+	}
 }
 
 void update()
@@ -1185,17 +1276,6 @@ void update()
 		}
 		else
 			pos.y = headBob(pos_state_y) * height + y_offset;
-
-		//fireworks update
-		for (vector<ParticleSystem>::iterator it = particle_systems.begin(); it < particle_systems.end(); it++)
-		{
-			if (it->ended)
-			{
-				if (it->type == TRAIL)
-				{
-				}
-			}
-		}
 	}
 
 	// update rendered angels
@@ -1210,6 +1290,43 @@ void update()
 	for (int i = 0; i < num_angels; i++)
 	{
 		angels[i].update(deltaT);
+	}
+
+	//fireworks update
+	list<ParticleSystem>::iterator it = particle_systems.begin();
+	while (it != particle_systems.end())
+	{
+		if (it->ended)
+		{
+			if (it->type == TRAIL)
+			{
+				vec3 newPos = it->pos + vec3{0, it->speed / 2, 0};
+				particle_systems.push_back(ParticleSystem(newPos, vec3{1, 1, 1}, 200, 10, 2, textures[6], initBurst, updateBurst, drawParticle, BURST));
+			}
+			it = particle_systems.erase(it);
+		}
+		else
+		{
+			it->update(deltaT);
+			it++;
+		}
+	}
+
+	//new fireworks
+	int new_fireworks = floor(t * fireworks_speed);
+
+	while (new_fireworks > num_fireworks)
+	{
+		GLfloat f_ang = frand() * 2 * PI;
+		GLfloat diam = 50 + frand() * 30;
+		GLfloat depth = 50 + frand() * 100;
+		GLfloat x = cos(f_ang) * diam;
+		GLfloat z = sin(f_ang) * diam;
+		vec3 trail_start = vec3{x, pos.y - depth, z};
+		ParticleSystem ps = ParticleSystem(trail_start, vec3{1, 1, 1}, 200, 200, 2, textures[6], initTrail, updateTrail, drawParticle, TRAIL);
+		ps.update(deltaT);
+		particle_systems.push_back(ps);
+		num_fireworks++;
 	}
 
 	// reset pointer to center of screen
