@@ -3,9 +3,16 @@
 #include <math.h>
 //#include "shaders.h"
 #include <GL/glut.h>
+#include <vector>
+//#include <vector>
 #include "angel.hpp"
 #include "RgbImage.h"
 #include "png.h"
+#include "frand.h"
+#include "vectors.h"
+#include "particles.h"
+
+using namespace std;
 
 //--------------------------------- Definir cores
 #define BLUE 0.0, 0.0, 1.0, 1.0
@@ -16,69 +23,16 @@
 #define BLACK 0.0, 0.0, 0.0, 1.0
 #define PI 3.14159
 
-struct vec3
-{
-	GLfloat x, y, z;
-};
+#define TRAIL 1
+#define BURST 2
 
-vec3 operator+(vec3 v1, vec3 v2)
-{
-	return {v1.x + v2.x, v1.y + v2.y, v1.z + v2.z};
-}
-
-vec3 operator-(vec3 v)
-{
-	return {-v.x, -v.y, -v.y};
-}
-
-vec3 operator-(vec3 v1, vec3 v2)
-{
-	return {v1.x - v2.x, v1.y - v2.y, v1.z - v2.z};
-}
-
-void operator+=(vec3 &lhs, const vec3 &rhs)
-{
-	lhs.x += rhs.x;
-	lhs.y += rhs.y;
-	lhs.z += rhs.z;
-}
-
-void operator-=(vec3 &lhs, const vec3 &rhs)
-{
-	lhs.x -= rhs.x;
-	lhs.y -= rhs.y;
-	lhs.z -= rhs.z;
-}
-
-vec3 operator*(vec3 v, GLfloat c)
-{
-	return {v.x * c, v.y * c, v.z * c};
-}
-
-vec3 operator*(GLfloat c, vec3 v)
-{
-	return {v.x * c, v.y * c, v.z * c};
-}
-
-vec3 operator/(vec3 v, GLfloat c)
-{
-	if (c == 0)
-	{
-		return v;
-	}
-	return {v.x / c, v.y / c, v.z / c};
-}
-
-struct vec2
-{
-	GLfloat x, y;
-};
 GLfloat t = 0;
 
-vec3 lerp3(vec3 v1, vec3 v2, GLfloat c)
-{
-	return {};
-}
+int num_fireworks;
+
+int firworks_speed = 2;
+
+vector<ParticleSystem> particle_systems;
 
 /* #region  Program Params */
 
@@ -120,7 +74,7 @@ GLfloat pos_state_x = (radius + min_rad) / 2 / radius, pos_state_y = 0, pos_stat
 
 /* #region  	Free Movement */
 bool free_cam = false;
-bool forward, backward, left, right, up, down;
+bool is_forward, is_backward, is_left, is_right, is_up, is_down;
 GLfloat speed = 20;
 /* #endregion */
 
@@ -950,27 +904,27 @@ void keyboard(unsigned char key, int x, int y)
 	{
 	case 'w':
 	case 'W':
-		forward = true;
+		is_forward = true;
 		break;
 	case 's':
 	case 'S':
-		backward = true;
+		is_backward = true;
 		break;
 	case 'a':
 	case 'A':
-		left = true;
+		is_left = true;
 		break;
 	case 'd':
 	case 'D':
-		right = true;
+		is_right = true;
 		break;
 	case 'q':
 	case 'Q':
-		up = true;
+		is_up = true;
 		break;
 	case 'e':
 	case 'E':
-		down = true;
+		is_down = true;
 		break;
 	case 'f':
 	case 'F':
@@ -1006,27 +960,27 @@ void keyRelease(unsigned char key, int x, int y)
 	{
 	case 'w':
 	case 'W':
-		forward = false;
+		is_forward = false;
 		break;
 	case 's':
 	case 'S':
-		backward = false;
+		is_backward = false;
 		break;
 	case 'a':
 	case 'A':
-		left = false;
+		is_left = false;
 		break;
 	case 'd':
 	case 'D':
-		right = false;
+		is_right = false;
 		break;
 	case 'q':
 	case 'Q':
-		up = false;
+		is_up = false;
 		break;
 	case 'e':
 	case 'E':
-		down = false;
+		is_down = false;
 		break;
 		// Escape
 	case 27:
@@ -1088,7 +1042,7 @@ void update()
 
 	// update direction vector
 
-	if (forward)
+	if (is_forward)
 	{
 		if (free_cam)
 		{
@@ -1103,7 +1057,7 @@ void update()
 			dir.z += cos(rot.x * DEGMULT);
 		}
 	}
-	if (backward)
+	if (is_backward)
 	{
 		if (free_cam)
 		{
@@ -1120,7 +1074,7 @@ void update()
 			dir.z -= cos(rot.x * DEGMULT);
 		}
 	}
-	if (left)
+	if (is_left)
 	{
 		if (free_cam)
 		{
@@ -1134,7 +1088,7 @@ void update()
 			dir.z += cos((rot.x + 90) * DEGMULT);
 		}
 	}
-	if (right)
+	if (is_right)
 	{
 		if (free_cam)
 		{
@@ -1148,7 +1102,7 @@ void update()
 			dir.z -= cos((rot.x + 90) * DEGMULT);
 		}
 	}
-	if (free_cam && up)
+	if (free_cam && is_up)
 	{
 
 		dir.x = sin(rot.x * DEGMULT) * cos((rot.y + 90) * DEGMULT);
@@ -1156,7 +1110,7 @@ void update()
 		dir.y = sin((rot.y + 90) * DEGMULT);
 		pos += dir * deltaT * speed;
 	}
-	if (free_cam && down)
+	if (free_cam && is_down)
 	{
 
 		dir.x = sin(rot.x * DEGMULT) * cos((rot.y + 90) * DEGMULT);
@@ -1231,6 +1185,17 @@ void update()
 		}
 		else
 			pos.y = headBob(pos_state_y) * height + y_offset;
+
+		//fireworks update
+		for (vector<ParticleSystem>::iterator it = particle_systems.begin(); it < particle_systems.end(); it++)
+		{
+			if (it->ended)
+			{
+				if (it->type == TRAIL)
+				{
+				}
+			}
+		}
 	}
 
 	// update rendered angels

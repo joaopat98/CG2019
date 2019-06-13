@@ -1,14 +1,13 @@
 #include <stdlib.h>
 #include <math.h>
 #include <GL/glut.h>
+#include "frand.h"
 
 #ifndef ANGEL_H
 #define ANGEL_H
 
 #define PI 3.14159
 #define DEGMULT (PI / 180)
-
-float frand();
 
 class Angel
 {

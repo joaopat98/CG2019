@@ -13,6 +13,7 @@
                 "-lGL",
                 "-lGLU",
                 "-lglut",
+                "-lGLEW",
                 "-lpng",
                 "-o",
                 ".bin/main"
