@@ -55,13 +55,41 @@ void ParticleSystem::render(vec3 player)
         particles[i].render(player);
 }
 
-Particle::Particle(vec3 init_pos, vec3 dir, vec3 color, GLfloat size, GLuint texture, void (*update_fn)(Particle *, GLfloat), void (*render_fn)(Particle *))
+void ParticleSystem::renderLight(int lightNum)
+{
+    vec3 pos = vec3{0, 0, 0};
+    GLfloat p_size = 0;
+    for (int i = 0; i < num_particles; i++)
+    {
+        pos += particles[i].pos;
+        p_size += particles[i].size;
+    }
+    pos /= num_particles;
+    p_size /= num_particles;
+    GLfloat intensity = p_size / particle_size;
+
+    GLfloat lightPos[4] = {pos.x, pos.y, pos.z, 1};
+    GLfloat lightAmb[4] = {0.0, 0.0, 0.0, 0};
+    GLfloat lightDiffuse[4] = {0.7 * intensity, 0.7 * intensity, 0.7 * intensity, 0};
+    GLfloat lightSpecular[4] = {0.5 * intensity, 0.5 * intensity, 0.5 * intensity, 0};
+
+    int light = GL_LIGHT0 + lightNum;
+
+    glLightfv(light, GL_POSITION, lightPos);
+    glLightfv(light, GL_AMBIENT, lightAmb);
+    glLightfv(light, GL_DIFFUSE, lightDiffuse);
+    glLightfv(light, GL_SPECULAR, lightSpecular);
+    glLightf(light, GL_LINEAR_ATTENUATION, 0.035);
+}
+
+Particle::Particle(vec3 init_pos, vec3 dir, vec3 color, GLfloat init_size, GLuint texture, void (*update_fn)(Particle *, GLfloat), void (*render_fn)(Particle *))
 {
     this->init_pos = init_pos;
     pos = init_pos;
     this->dir = dir;
     this->color = color;
-    this->size = size;
+    this->init_size = init_size;
+    size = init_size;
     this->texture = texture;
     this->update_fn = update_fn;
     this->render_fn = render_fn;

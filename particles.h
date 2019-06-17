@@ -17,7 +17,7 @@ private:
 
 public:
     vec3 pos, velocity;
-    GLfloat speed, size;
+    GLfloat speed, size, init_size;
     vec3 init_pos, dir, color;
     GLuint texture;
     bool ended = false;
@@ -51,6 +51,7 @@ public:
     void reset();
     void update(GLfloat deltaT);
     void render(vec3 player);
+    void renderLight(int lightNum);
 };
 
 #endif

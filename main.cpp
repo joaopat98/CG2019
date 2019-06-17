@@ -29,7 +29,7 @@ using namespace std;
 GLfloat t = 0;
 
 int num_fireworks = 0;
-
+GLfloat fireworks_time = 0;
 GLfloat fireworks_speed = 1;
 
 list<ParticleSystem> particle_systems;
@@ -59,7 +59,7 @@ int step_under = 25, step_over = 25;
 GLfloat min_rad = 5, radius = 30, frac = 20, height = 2;
 GLfloat color_time_mult = 100;
 GLfloat day_length = 100;
-GLfloat day_time = day_length;
+GLfloat day_time = 0;
 GLfloat day_contrast = 3;
 GLfloat day_state;
 /* #region  		Stair Railing */
@@ -109,6 +109,8 @@ GLfloat minAngelRad = 30, maxAngelRad = 50;
 /* #endregion */
 
 /* #endregion */
+
+int particle = 0;
 
 GLfloat angelSpeed()
 {
@@ -245,6 +247,9 @@ void init_textures()
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
 	textures[6] = loadTexture("images/explosion.png", w, h);
+	textures[7] = loadTexture("images/fireworks/red.png", w, h);
+	textures[8] = loadTexture("images/fireworks/green.png", w, h);
+	textures[9] = loadTexture("images/fireworks/blue.png", w, h);
 }
 
 void init(void)
@@ -257,7 +262,7 @@ void init(void)
 	glEnable(GL_LIGHT0);
 	glEnable(GL_LIGHT1);
 	glShadeModel(GL_SMOOTH);
-	GLfloat ambLight[] = {0.1, 0.1, 0.1};
+	GLfloat ambLight[] = {0.05, 0.05, 0.05};
 	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambLight);
 	init_textures();
@@ -503,7 +508,7 @@ void drawLights()
 		glRotatef(-day_time * 180, 0, 1, 0);
 		glTranslatef(sizeSky, sizeSky, sizeSky);
 		GLfloat lightPos[4] = {0, 0, 0, 1};
-		GLfloat lightAmb[4] = {0.0, 0.0, 0.0, 0};
+		GLfloat lightAmb[4] = {0.12 * day_state, 0.12 * day_state, 0.12 * day_state, 0};
 		GLfloat lightDiffuse[4] = {1 * day_state, 0.9 * day_state, 0.8 * day_state, 0};
 		GLfloat lightSpecular[4] = {0.5 * day_state, 0.45 * day_state, 0.4 * day_state, 0};
 
@@ -520,34 +525,54 @@ void drawLights()
 	GLfloat flashDiffuse[4] = {1.0, 0.9, 0.3, 0};
 	GLfloat flashSpecular[4] = {0.5, 0.45, 0.15, 0};
 
-	glLightfv(GL_LIGHT1, GL_POSITION, flashPos);
-	glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, flashDir);
-	glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, flash_exp);
-	glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, flash_ang);
-	glLightf(GL_LIGHT1, GL_LINEAR_ATTENUATION, flash_att);
-	glLightfv(GL_LIGHT1, GL_AMBIENT, flashAmb);
-	glLightfv(GL_LIGHT1, GL_DIFFUSE, flashDiffuse);
-	glLightfv(GL_LIGHT1, GL_SPECULAR, flashSpecular);
+	if (flash)
+	{
+		glLightfv(GL_LIGHT1, GL_POSITION, flashPos);
+		glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, flashDir);
+		glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, flash_exp);
+		glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, flash_ang);
+		glLightf(GL_LIGHT1, GL_LINEAR_ATTENUATION, flash_att);
+		glLightfv(GL_LIGHT1, GL_AMBIENT, flashAmb);
+		glLightfv(GL_LIGHT1, GL_DIFFUSE, flashDiffuse);
+		glLightfv(GL_LIGHT1, GL_SPECULAR, flashSpecular);
+	}
+	else
+	{
+		glLightfv(GL_LIGHT1, GL_AMBIENT, flashAmb);
+		glLightfv(GL_LIGHT1, GL_DIFFUSE, flashAmb);
+		glLightfv(GL_LIGHT1, GL_SPECULAR, flashAmb);
+	}
+	int l = 2;
+	list<ParticleSystem>::iterator p = particle_systems.begin();
+	while (l < 8 && p != particle_systems.end())
+	{
+		if (p->type == BURST)
+		{
+			glEnable(GL_LIGHT0 + l);
+			p->renderLight(l++);
+		}
+		p++;
+	}
 
-	/*
-	glPushMatrix();
-	vec3 off = {1, -1, 1};
-	vec3 oof = pos + off;
-	glTranslatef(oof.x, oof.y, oof.z);
-	glutSolidCube(1);
-	glPopMatrix();
-	*/
+	for (; l < 8; l++)
+	{
+		glDisable(GL_LIGHT0 + l);
+		glLightfv(GL_LIGHT0 + l, GL_AMBIENT, flashAmb);
+		glLightfv(GL_LIGHT0 + l, GL_DIFFUSE, flashAmb);
+		glLightfv(GL_LIGHT0 + l, GL_SPECULAR, flashAmb);
+	}
 }
 
 void drawParticle(Particle *p)
 {
+	particle = (particle + 1) % 3;
 	glEnable(GL_TEXTURE_2D);
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 	glEnable(GL_BLEND);
 	glAlphaFunc(GL_GREATER, 0.5);
 	glEnable(GL_ALPHA_TEST);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glBindTexture(GL_TEXTURE_2D, textures[6]);
+	glBindTexture(GL_TEXTURE_2D, textures[7 + particle]);
 	float white[] = {1.0, 1.0, 1.0, 1.0};
 	glMaterialfv(GL_FRONT, GL_AMBIENT, white);
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, white);
@@ -887,8 +912,10 @@ void drawScene()
 {
 	drawStairs();
 	drawAngels();
+
 	for (list<ParticleSystem>::iterator it = particle_systems.begin(); it != particle_systems.end(); it++)
 	{
+		particle = 0;
 		it->render(pos);
 	}
 
@@ -943,7 +970,6 @@ GLfloat headBob(GLfloat state)
 
 void keyboard(unsigned char key, int x, int y)
 {
-
 	switch (key)
 	{
 	case 'w':
@@ -993,6 +1019,10 @@ void keyboard(unsigned char key, int x, int y)
 	case 'n':
 	case 'N':
 		day_time = floor((day_time + 0.5) / 0.5) * 0.5;
+		break;
+	case 'l':
+	case 'L':
+		flash = !flash;
 		break;
 	//--------------------------- Escape
 	case 27:
@@ -1126,6 +1156,8 @@ void update()
 	t = curTime;
 
 	day_time += deltaT / day_length;
+
+	day_time = fmod(day_time, 2);
 
 	day_state = (sqrt((1 + day_contrast * day_contrast) / (1 + day_contrast * day_contrast * pow(cos(PI * day_time), 2))) * cos(PI * day_time) + 1) / 2;
 
@@ -1301,7 +1333,7 @@ void update()
 			if (it->type == TRAIL)
 			{
 				vec3 newPos = it->pos + vec3{0, it->speed / 2, 0};
-				particle_systems.push_back(ParticleSystem(newPos, vec3{1, 1, 1}, 200, 10, 2, textures[6], initBurst, updateBurst, drawParticle, BURST));
+				particle_systems.push_back(ParticleSystem(newPos, vec3{1, 1, 1}, 300, 20, 1, textures[6], initBurst, updateBurst, drawParticle, BURST));
 			}
 			it = particle_systems.erase(it);
 		}
@@ -1313,7 +1345,12 @@ void update()
 	}
 
 	//new fireworks
-	int new_fireworks = floor(t * fireworks_speed);
+	if (day_time > 0.6 && day_time < 1.4)
+	{
+		fireworks_time += deltaT;
+	}
+
+	int new_fireworks = floor(fireworks_time * fireworks_speed);
 
 	while (new_fireworks > num_fireworks)
 	{
@@ -1323,7 +1360,7 @@ void update()
 		GLfloat x = cos(f_ang) * diam;
 		GLfloat z = sin(f_ang) * diam;
 		vec3 trail_start = vec3{x, pos.y - depth, z};
-		ParticleSystem ps = ParticleSystem(trail_start, vec3{1, 1, 1}, 200, 200, 2, textures[6], initTrail, updateTrail, drawParticle, TRAIL);
+		ParticleSystem ps = ParticleSystem(trail_start, vec3{1, 1, 1}, 300, 200, 2, textures[6], initTrail, updateTrail, drawParticle, TRAIL);
 		ps.update(deltaT);
 		particle_systems.push_back(ps);
 		num_fireworks++;
