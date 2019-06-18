@@ -372,7 +372,7 @@ void drawAxes()
 	glMaterialfv(GL_FRONT, GL_EMISSION, zero);
 }
 
-void DrawSkyBox(int tex)
+void DrawSkyBox(int tex, GLfloat size)
 {
 	GLfloat fExtent = sizeSky;
 	glEnable(GL_TEXTURE_CUBE_MAP);
@@ -382,6 +382,7 @@ void DrawSkyBox(int tex)
 	glPushMatrix();
 	glTranslatef(0, pos.y, 0);
 	glRotatef(-day_time * 180, 0, 1, 0);
+	glScalef(size, size, size);
 	//////////////////////////////////////////////
 	// Negative X
 	glPushMatrix();
@@ -919,14 +920,11 @@ void drawScene()
 		it->render(pos);
 	}
 
-	DrawSkyBox(3);
+	DrawSkyBox(3, 1);
 	glEnable(GL_BLEND);
 	glBlendColor(day_state, day_state, day_state, day_state);
 	glBlendFunc(GL_ONE_MINUS_CONSTANT_ALPHA, GL_CONSTANT_COLOR);
-	glPushMatrix();
-	glScalef(0.999, 0.999, 0.999);
-	DrawSkyBox(5);
-	glPopMatrix();
+	DrawSkyBox(5, 0.999);
 	glDisable(GL_BLEND);
 }
 
